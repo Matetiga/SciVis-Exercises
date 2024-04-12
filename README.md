@@ -63,7 +63,17 @@ For other supported versions (e.g., Visual Studio 2019), modify the generator fl
 cmake -B cmake-build -G "Visual Studio 16 2019"
 ```
 
-Once built, open `SciVis.sln` from the `cmake-build` directory. To build and run an exercise, set it as the StartUp Project and either press `F5` or click the green play button.
+Be advised that not all versions of Visual Studio are supported. Tested versions are 2022 and 2019.
+
+--------
+
+Once configured, open `SciVis.sln` in the `cmake-build` directory. 
+
+On the right side (in the Solution Explorer), you will see a list of projects. Right-click on the project you want to build and select 'Set as StartUp Project'. Then either press `F5` or click on the green play button to build and run the project.
+
+If you want to change the project you are working on, you can once again right-click on the project and select 'Set as StartUp Project'.
+
+![Video showcasing selecting the project to build](https://i.imgur.com/ZYFNfJV.gif)
 
 ### Building on Linux
 
