@@ -1,5 +1,5 @@
 @=
-projectName="intro";
+projectName="task0_framework";
 projectType="application_plugin";
 projectGUID="CF2E1CA9-4C1A-42D3-802A-0FF1E0DCF2E1";
 addProjectDirs=[CGV_DIR."/plugins", CGV_DIR."/libs", CGV_DIR."/3rd"];

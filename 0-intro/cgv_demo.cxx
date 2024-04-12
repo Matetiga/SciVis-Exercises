@@ -86,7 +86,7 @@ protected:
 	// Offscreen framebuffer
 	cgv::render::frame_buffer fb;
 	cgv::render::texture texture;
-	cgv::media::color<float> bgcolor;
+	cgv::rgba bgcolor;
 
 	// Geometry buffers
 	struct vertex {

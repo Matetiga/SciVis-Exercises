@@ -91,13 +91,13 @@ protected:
 	///
 	bool transfer_function_changed;
 	/// overload with new implementation
-	void compute_transfer_function_texture(std::vector<cgv::rgb>& clr_samples)
+	void compute_transfer_function_texture(std::vector<cgv::rgba>& clr_samples)
 	{
 		float scale = 1.0f / (transfer_function_texture_resolution - 1);
 
 		for (unsigned i = 0; i < transfer_function_texture_resolution; ++i) {
 			// define new color
-			cgv::rgb clr;
+			cgv::rgba clr;
 			float v = i * scale;
 			// set absoprtion value
 			clr[3] = v;
@@ -105,8 +105,8 @@ protected:
 			switch(color_scale){
 				/************************************************************************************
 				 tasks 4.2c: Create your color scale by filling the *clr_samples*-vector with your own
-							   cgv::rgb-colors: Add the rbg-values (emission) of the current color *clr*.
-							   (cgv::rgb can be used like a vec4<float> with values in range [0,1].)
+							   cgv::rgba-colors: Add the rbg-values (emission) of the current color *clr*.
+							   (cgv::rgba can be used like a vec4<float> with values in range [0,1].)
 							   Note: you can reorganize this function, if it doesn't fit your needs or 
 							   add variable before the switch-statement. Just keep in mind that the clr_samples-vector 
 							   should be of the size transfer_function_texture_resolution. */
@@ -132,7 +132,7 @@ protected:
 			transfer_function_changed = false;
 			if (transfer_function_texture.is_created())
 				transfer_function_texture.destruct(ctx);
-			std::vector<cgv::rgb> C;
+			std::vector<cgv::rgba> C;
 			C.resize(transfer_function_texture_resolution);
 
 			compute_transfer_function_texture(C);

@@ -1,15 +1,3 @@
-# office tmp files
-~*
-
-# student versions
-*-student
-
-# latex output
-*.pdf
-*.aux
-*.log
-*.synctex.gz
-
 # Ignore Build output
 cmake-build*
 build
@@ -17,4 +5,5 @@ build
 # Ignore Jetbrains configurations
 .idea
 
+# Ignore later changes to the VSCode configuration
 .vscode

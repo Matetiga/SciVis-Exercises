@@ -20,7 +20,7 @@ set(SHADERS
 )
 
 # Add the target to the CGV CMake build system
-cgv_add_target(scivis-stereo
+cgv_add_target(task1_stereo
     TYPE plugin    NO_EXECUTABLE
     SOURCES        ${SOURCES}
     HEADERS        ${HEADERS}

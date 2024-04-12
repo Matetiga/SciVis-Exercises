@@ -20,8 +20,7 @@ set(SHADERS
 	glsl/sphere_raycast.glvs
 )
 
-# Add the target to the CGV CMake build system
-cgv_add_target(scivis-particle
+cgv_add_target(task2_particle
     TYPE plugin    NO_EXECUTABLE
     SOURCES        ${SOURCES}
     HEADERS        ${HEADERS}

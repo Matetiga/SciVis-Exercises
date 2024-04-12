@@ -1,6 +1,6 @@
 @=
 projectType="application_plugin";
-projectName="scivis-volume";
+projectName="task4_volume";
 projectGUID="42EC4660-EC07-422F-A0A4-F40FF32D91EC";
 addProjectDirs=[CGV_DIR."/libs", CGV_DIR."/plugins", CGV_DIR."/3rd"];
 addProjectDeps=[

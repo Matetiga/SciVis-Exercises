@@ -10,7 +10,7 @@ set(HEADERS
 )
 
 # add our target to the CGV CMake build system
-cgv_add_target(intro
+cgv_add_target(task0_framework
 	TYPE plugin    NO_EXECUTABLE
 	SOURCES        ${SOURCES}
 	HEADERS        ${HEADERS}

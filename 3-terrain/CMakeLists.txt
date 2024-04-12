@@ -17,7 +17,7 @@ set(SHADERS
 )
 
 # Add the target to the CGV CMake build system
-cgv_add_target(scivis-terrain
+cgv_add_target(task3_terrain
     TYPE plugin    NO_EXECUTABLE
     SOURCES        ${SOURCES}
     HEADERS        ${HEADERS}

@@ -20,7 +20,7 @@ set(SHADERS
 )
 
 # Add the target to the CGV CMake build system
-cgv_add_target(scivis-volume
+cgv_add_target(task4_volume
     TYPE plugin    NO_EXECUTABLE
     SOURCES        ${SOURCES}
     HEADERS        ${HEADERS}
