@@ -45,24 +45,7 @@ For building:
 
 To build, press `F1` and type `CMake: Configure` and `CMake: Build`, or use the buttons in the bottom left corner. Ensure the build target is set to `all`.
 
-#### Using Devcontainers (Advanced Users)
-
-<details>
-  <summary>Click to expand for using Docker devcontainers.</summary>
-
-Ensure you have Docker installed. This setup includes a preconfigured environment using a devcontainer, ideal if you are familiar with Docker and devcontainers.
-
-Note: Exercises require a functioning X11 server for visual output.
-- **Windows**: Use tools like VcXSrv or MobaXTerm. Configure these tools to allow more permissive connections.
-- **Linux**: Allow connections to your X11 server with:
-
-  ```bash
-  xhost local:root
-  ```
-
-Adjust the devcontainer configuration file according to your OS.
-
-</details>
+*Note: It is also possible to use devcontainers with docker for advanced users, for more see [here](#using-devcontainers-advanced-users).*
 
 ### Building on Windows
 
@@ -115,3 +98,16 @@ scivis
 ## Additional Information
 
 Building with other systems like the *.pj build system is possible. For more details, refer to the [CGV framework official documentation](https://sgumhold.github.io/cgv/install.html).
+
+### Using Devcontainers (Advanced Users)
+Ensure you have Docker installed. This setup includes a preconfigured environment using a devcontainer, ideal if you are familiar with Docker and devcontainers.
+
+Note: Exercises require a functioning X11 server for visual output.
+- **Windows**: Use tools like VcXSrv or MobaXTerm. Configure these tools to allow more permissive connections.
+- **Linux**: Allow connections to your X11 server with:
+
+  ```bash
+  xhost local:root
+  ```
+
+Adjust the devcontainer configuration file according to your OS.
