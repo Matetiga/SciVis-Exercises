@@ -1,0 +1,20 @@
+@=
+projectType="application_plugin";
+projectName="scivis-particle";
+projectGUID="884BF9D0-1A39-4325-A8A9-02E66534DAA6";
+addProjectDirs=[CGV_DIR."/libs", CGV_DIR."/plugins", CGV_DIR."/3rd"];
+addProjectDeps=[
+	"cgv_utils", "cgv_type", "cgv_reflect", "cgv_data", "cgv_signal", 
+	"cgv_base", "cgv_media", "cgv_gui", "cgv_render",
+	"cgv_gl", "glew", "plot",
+	"cg_fltk", "crg_stereo_view", 
+	"crg_antialias", "crg_depth_of_field", "crg_light", "cmi_io", "crg_grid",
+	"cgv_viewer", "cg_ext"
+];
+
+workingDirectory = INPUT_DIR;
+
+addCommandLineArguments=[
+	'config:"'.INPUT_DIR.'/config.def"',
+	after('"type(shader_config):shader_path='."'".INPUT_DIR."/glsl;".CGV_DIR."/libs/cgv_gl/glsl'".'"', "cg_fltk")
+];

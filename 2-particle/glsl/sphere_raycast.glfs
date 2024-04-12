@@ -1,0 +1,70 @@
+﻿#version 150 
+
+uniform int culling_mode = 0;
+uniform int map_color_to_material = 0;
+uniform int illumination_mode = 2;
+
+struct sphere_quad_info
+{
+    vec2 q_tilde;   // texture coordinate
+    vec3 v_eye;     // ray vector in eye coordinates
+     /*<your_variables_here - exactly as in sphere_quad_info of sphere_raycast.glgs>*/
+};
+
+in sphere_quad_info quad;
+
+in vec4 color_fs;
+
+
+//***** begin interface of surface.glsl ***********************************
+vec4 compute_reflected_appearance(vec3 position_eye, vec3 normal_eye, vec4 color, int side);
+//***** end interface of surface.glsl ***********************************
+
+//***** begin interface of fragment.glfs ***********************************
+uniform float gamma = 2.2;
+void finish_fragment(vec4 color);
+//***** end interface of fragment.glfs ***********************************
+
+
+bool compute_ray_sphere_intersection(out vec3 x_eye, out vec3 n_eye)
+{
+    /************************************************************************************
+     tasks 2.1b:  Determine if the ray intersects with the sphere. If not return false.
+                  Use q_tilde for an easy intersection test based on texture coordinates.*/
+
+     /*<your_code_here>*/
+
+    /************************************************************************************/
+
+    /************************************************************************************
+     tasks 2.1c:  Compute the position (x_eye) and the normal (n_eye) of the intersection
+                  point in eye coordinates.*/
+
+     /*<your_code_here>*/
+
+    /************************************************************************************/
+
+    /************************************************************************************
+     tasks 2.1d:  Update gl_FragDepth with the corrected depth value for the intersection
+                  point.*/
+
+     /*<your_code_here>*/
+
+    /************************************************************************************/
+
+    return true;
+}
+
+void main()
+{
+    vec3 x_eye = vec3(0.0f);     // position in eye coordinates
+    vec3 n_eye = vec3(0.0f);     // normal in eye coordinates
+
+    if (!compute_ray_sphere_intersection(x_eye, n_eye))
+        discard;
+
+    // computes the color based on the point and normal in eye coordinates and
+    // a specified color (color_fs)
+    vec4 color = compute_reflected_appearance(x_eye, n_eye, color_fs, 1);
+    finish_fragment(color);
+}

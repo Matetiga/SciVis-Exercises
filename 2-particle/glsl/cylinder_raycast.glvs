@@ -1,0 +1,13 @@
+#version 150 
+
+in vec4 position;
+in vec4 color;
+
+out vec4 color_gs;
+
+void main()
+{
+    // pass position and color through
+    gl_Position = position;
+	color_gs = color;
+}

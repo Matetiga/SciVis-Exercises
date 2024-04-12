@@ -1,0 +1,5 @@
+name(terrain):dem_file_name="./data/earth_dem.jpg"
+name(terrain):color_file_name="./data/earth_color.jpg"
+
+//name(terrain):dem_file_name="./data/earth_dem_128.jpg"
+//name(terrain):color_file_name="./data/earth_color_128.jpg"

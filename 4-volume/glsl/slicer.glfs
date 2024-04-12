@@ -1,0 +1,22 @@
+#version 150
+
+uniform sampler1D transfer_function;
+uniform sampler3D volume_texture;
+
+uniform float emission_gamma;
+uniform float absorption_gamma;
+
+vec4 evaluate_transfer_function(in float rho)
+{
+	vec4 rgba = texture(transfer_function, rho);
+	rgba.rgb = pow(rgba.rgb, vec3(emission_gamma));
+	rgba.a   = pow(rgba.a, absorption_gamma);
+	return rgba;
+}
+
+in vec3 tc;
+
+void main()
+{
+	gl_FragColor = evaluate_transfer_function(texture(volume_texture, tc).x);
+}

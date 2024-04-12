@@ -1,0 +1,24 @@
+#version 150
+
+uniform vec3 extent;
+
+//***** begin interface of view.glsl ***********************************
+mat4 get_modelview_matrix();
+mat4 get_projection_matrix();
+mat4 get_modelview_projection_matrix();
+mat4 get_inverse_modelview_matrix();
+mat4 get_inverse_modelview_projection_matrix();
+mat3 get_normal_matrix();
+mat3 get_inverse_normal_matrix();
+//***** end interface of view.glsl ***********************************
+
+in vec3 tex_coords;
+
+out vec3 tc;
+
+void main()
+{
+	vec4 position = vec4(extent * tex_coords - 0.5*extent, 1.0);
+	tc = tex_coords;
+	gl_Position = get_modelview_projection_matrix()*position;
+}

@@ -1,0 +1,35 @@
+#version 150
+
+uniform bool triangular;
+uniform int N;
+
+in vec4 position; 	// = vec4(base.x, base.y, edge0.x, edge0.y)
+in vec3 normal;		// = vec3(edge1.x, edge1.y, subdivide_count)
+in vec3 color;		// color of triangle orientation
+
+out vec2 texcrd_gs;
+out vec4 tc_edges;
+out vec3 color_gs;
+
+void main()
+{
+	vec2 base = (position.xy + vec2(0.5)) / N;
+	vec2 edge0 = position.zw / N;
+	vec2 edge1 = normal.xy / N;
+	int subdivide_count = int(normal.z);
+
+	int j = gl_InstanceID / subdivide_count;
+	int i = gl_InstanceID - j * subdivide_count;
+	if (triangular && i+j >= subdivide_count) {
+		texcrd_gs = base + (subdivide_count - j)* edge0 + (subdivide_count - i) * edge1;
+		tc_edges.xy = -edge0;
+		tc_edges.zw = -edge1;
+	}
+	else {
+		texcrd_gs = base + i * edge0 + j * edge1;
+		tc_edges.xy = edge0;
+		tc_edges.zw = edge1;
+	}
+	
+	color_gs = color;
+}

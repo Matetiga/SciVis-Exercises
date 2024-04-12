@@ -1,0 +1,121 @@
+﻿#version 330
+#extension GL_EXT_geometry_shader4 : enable
+
+layout(lines) in;
+layout(triangle_strip, max_vertices = 24) out;
+
+uniform float radius;
+
+in vec4 color_gs[];
+
+out vec3 position_eye;
+out vec4 color_fs;
+out vec3 position_ucyl;
+out vec3 eye_ucyl;
+out mat4 hM_ucyl_eye;
+out mat3 NM_ucyl_eye;
+
+//***** begin interface of view.glsl ***********************************
+mat4 get_modelview_matrix();
+mat4 get_projection_matrix();
+mat4 get_modelview_projection_matrix();
+mat4 get_inverse_modelview_matrix();
+mat4 get_inverse_modelview_projection_matrix();
+mat3 get_normal_matrix();
+mat3 get_inverse_normal_matrix();
+//***** end interface of view.glsl ***********************************
+
+void emit_vertex(in mat4 hM_ucyl_clip, in mat4 hM_ucyl_eye, in vec4 pos_ucyl)
+{
+	color_fs = pos_ucyl.z < 0.5 ? color_gs[0] : color_gs[1];
+	position_ucyl = pos_ucyl.xyz;
+	position_eye = (hM_ucyl_eye * pos_ucyl).xyz;
+	gl_Position = hM_ucyl_clip * pos_ucyl;
+	EmitVertex();
+}
+
+
+/// emits the four vertices of a rectangle
+/// transformation matrices from unit cylinder to world coordinates
+void emit_quad(in mat4 hM_ucyl_clip, in mat4 hM_ucyl_eye,
+	in vec4 hpos_ucyl0, in vec4 hpos_ucyl1, in vec4 hpos_ucyl2, in vec4 hpos_ucyl3)
+{
+    emit_vertex(hM_ucyl_clip, hM_ucyl_eye, hpos_ucyl0);
+    emit_vertex(hM_ucyl_clip, hM_ucyl_eye, hpos_ucyl1);
+    emit_vertex(hM_ucyl_clip, hM_ucyl_eye, hpos_ucyl2);
+    emit_vertex(hM_ucyl_clip, hM_ucyl_eye, hpos_ucyl3);
+	EndPrimitive();
+}
+
+
+void main()
+{
+	/*
+	Besides the eye and clip coordinate systems, a unit cylinder coordinates
+	system (subscript ucyl) is introduced in which the cylinder has radius and
+	length 1 and ranges in xy plane (equals uv) over [-1,1]^2 and along the z
+	direction (equals t) over [0,1]
+	*/
+
+	mat4 hM_ucyl_world = mat4(0.0);
+	mat3 M_ucyl_world;
+
+	/************************************************************************************
+     tasks 2.2a:  Compute the vectors u,v,t defining the cylinder orientation.Then
+    				compute the transformation matrix from unit cylinder to world coordinates
+    				(hM_ucyl_world). Also set the 3x3-transformation matrix (M_ucyl_world)
+    				which is used for the normal transformation matrix. P0 and P1 are
+    				given through the input line (gl_in[0/1].gl_Position). Radius is given as a
+    			    uniform. */
+
+     /*<your_code_here>*/
+
+    /************************************************************************************/
+
+	// extend to eye and clip coordinates (first matrix is passed to fragment shader)
+	hM_ucyl_eye = get_modelview_matrix() * hM_ucyl_world;
+	mat4 hM_ucyl_clip = get_modelview_projection_matrix() * hM_ucyl_world;
+
+	// compute eye in unit cylinder coordinates (passed on the fragment shader)
+	eye_ucyl = inverse(hM_ucyl_eye)[3].xyz;
+
+	// compute normal transformation matrix from unit cylinder to eye coordinates and pass it to fragment shader
+	NM_ucyl_eye = get_normal_matrix()*transpose(inverse(M_ucyl_world));
+
+	// emit faces in the unit cylinder coordinate system
+	emit_quad(hM_ucyl_clip, hM_ucyl_eye,
+		vec4(-1.0, -1.0, 1.0, 1.0),
+		vec4(-1.0,  1.0, 1.0, 1.0),
+		vec4(-1.0, -1.0, 0.0, 1.0),
+		vec4(-1.0, 1.0, 0.0, 1.0));
+
+	emit_quad(hM_ucyl_clip, hM_ucyl_eye,
+		vec4( 1.0, -1.0, 0.0, 1.0),
+		vec4( 1.0,  1.0, 0.0, 1.0),
+		vec4( 1.0, -1.0, 1.0, 1.0),
+		vec4( 1.0,  1.0, 1.0, 1.0));
+
+	emit_quad(hM_ucyl_clip, hM_ucyl_eye,
+		vec4( 1.0, -1.0, 1.0, 1.0),
+		vec4(-1.0, -1.0, 1.0, 1.0),
+		vec4( 1.0, -1.0, 0.0, 1.0),
+		vec4(-1.0, -1.0, 0.0, 1.0));
+
+	emit_quad(hM_ucyl_clip, hM_ucyl_eye,
+		vec4(-1.0,  1.0, 1.0, 1.0),
+		vec4( 1.0,  1.0, 1.0, 1.0),
+		vec4(-1.0,  1.0, 0.0, 1.0),
+		vec4( 1.0,  1.0, 0.0, 1.0));
+
+	emit_quad(hM_ucyl_clip, hM_ucyl_eye,
+		vec4( 1.0, -1.0, 1.0, 1.0),
+		vec4( 1.0,  1.0, 1.0, 1.0),
+		vec4(-1.0, -1.0, 1.0, 1.0),
+		vec4(-1.0,  1.0, 1.0, 1.0));
+
+	emit_quad(hM_ucyl_clip, hM_ucyl_eye,
+		vec4(-1.0, -1.0, 0.0, 1.0),
+		vec4(-1.0,  1.0, 0.0, 1.0),
+		vec4( 1.0, -1.0, 0.0, 1.0),
+		vec4( 1.0,  1.0, 0.0, 1.0));
+}

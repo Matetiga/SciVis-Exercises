@@ -1,0 +1,4 @@
+[submodule "cgv"]
+	path = cgv
+	url = https://github.com/sgumhold/cgv.git
+	branch = develop

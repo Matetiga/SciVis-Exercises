@@ -1,0 +1,84 @@
+﻿#version 150
+#extension GL_EXT_geometry_shader4 : enable
+
+struct sphere_parameter_space
+{
+    vec3  m_tilde;  // silhouette center
+    vec3  x_tilde;  // orthogonal direction x with length roh
+    vec3  y_tilde;  // orthogonal direction y with length roh
+    vec3  e_tilde;  // eye point
+     /*<your_variables_here - exactly as in sphere_parameter_space of sphere_raycast.glvs>*/
+};
+
+struct sphere_quad_info
+{
+    vec2 q_tilde;   // texture coordinate
+    vec3 v_eye;     // corner in eye coordinates
+     /*<your_variables_here - also add in sphere_raycast.glfs>*/
+};
+
+
+uniform float pixel_extent_per_depth;
+
+in mat3 NM[];
+in mat4 MV[];
+in mat4 MVP[];
+in sphere_parameter_space sps[];
+in vec4  color_gs[];
+
+out vec4  color_fs;
+out sphere_quad_info quad;
+
+
+/// emits one vertex of the sphere quad depending on the sphere center and the current corner
+/// t(-1,1)  y   t(1,1)
+///      o---|---o
+///      |   |___|x
+///      |       |
+///      o-------o
+/// t(-1,-1)     t(-1,1)
+void generate_quad_vertex(in vec4 sphere, in vec2 t, in sphere_parameter_space sps, in mat4 MV, in mat4 MVP, in mat3 NM)
+{
+    // use texture coordinates for easy intersection test
+    quad.q_tilde = t;
+
+    /************************************************************************************
+     tasks 2.1:  Compute the position of the current quad corner given by t:
+                 1. Compute the corner in parameter space
+                 2. Transform it to world coordinates by scaling with sphere radius and
+                    translating with sphere center
+                 3. Store it as quad.v_eye in eye coordinates and as gl_Position in clip
+                    coordinates
+                 
+                 Input variable sphere includes coordinates of center position (xyz) and its
+                 original radius (w-component).
+                 
+                 You can extent the 'quad' struct if you want to compute some other variables
+                 here as well.*/
+
+     /*<your_code_here>*/
+
+    /************************************************************************************/
+
+    EmitVertex();
+}
+
+
+void generate_sphere_cover_quad(in vec4 sphere, in sphere_parameter_space sps, in mat4 MV, in mat4 MVP, in mat3 NM)
+{
+    
+    generate_quad_vertex(sphere, vec2(-1, -1), sps, MV, MVP, NM);
+    generate_quad_vertex(sphere, vec2( 1, -1), sps, MV, MVP, NM);
+    generate_quad_vertex(sphere, vec2(-1,  1), sps, MV, MVP, NM);
+    generate_quad_vertex(sphere, vec2( 1,  1), sps, MV, MVP, NM);
+    EndPrimitive();
+}
+
+
+void main()
+{
+    color_fs = color_gs[0];
+
+    // emits the corners of a rectangle covering the silhouette of a sphere
+    generate_sphere_cover_quad(gl_PositionIn[0], sps[0], MV[0], MVP[0], NM[0]);
+}

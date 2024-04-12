@@ -1,0 +1,13 @@
+#version 150
+
+in vec2 position;
+in vec2 texcoord;
+
+out vec2 texcrd;
+
+void main()
+{
+	// transform vertex to clip space
+	gl_Position = vec4(vec3(position,0.0),1.0);
+	texcrd = texcoord;
+}

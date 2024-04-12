@@ -1,0 +1,64 @@
+#version 150 
+
+uniform sampler2D dem_tex;
+uniform sampler2D color_tex;
+
+uniform vec3 extent;
+uniform float color_lambda;
+uniform bool wireframe;
+uniform float wire_threshold;
+uniform vec3 wire_color;
+
+//***** begin interface of view.glsl ***********************************
+mat4 get_modelview_matrix();
+mat4 get_projection_matrix();
+mat4 get_modelview_projection_matrix();
+mat4 get_inverse_modelview_matrix();
+mat4 get_inverse_modelview_projection_matrix();
+mat3 get_normal_matrix();
+mat3 get_inverse_normal_matrix();
+//***** end interface of view.glsl ***********************************
+
+in vec3 pos_eye;
+in vec2 texcrd;
+in vec3 color;
+in vec2 sigma01;
+
+//***** begin interface of surface.glsl ***********************************
+vec4 compute_reflected_appearance(vec3 position_eye, vec3 normal_eye, vec4 color, int side);
+//***** end interface of surface.glsl ***********************************
+
+//***** begin interface of fragment.glfs ***********************************
+uniform float gamma = 2.2;
+void finish_fragment(vec4 color);
+//***** end interface of fragment.glfs ***********************************
+
+vec3 estimate_normal(in vec2 tc)
+{
+	vec2 tx = dFdx(tc);
+	vec2 ty = dFdy(tc);
+	vec2 hg = vec2(
+		texture(dem_tex, tc + 0.5*tx).x - texture(dem_tex, tc - 0.5*tx).x,
+		texture(dem_tex, tc + 0.5*ty).x - texture(dem_tex, tc - 0.5*ty).x);
+
+	hg /= (extent.xy*vec2(length(tx), length(ty)));
+	hg *= extent.z;
+	return normalize(get_normal_matrix()*vec3(-hg, 1.0));
+}
+
+void main()
+{
+	vec4 clr = texture(color_tex, texcrd);
+	clr = compute_reflected_appearance(pos_eye, estimate_normal(texcrd), clr, 1);
+	clr.rgb = (1.0 - color_lambda)*clr.rgb + color_lambda * color;
+	if (wireframe) {
+		float minsig = min(min(sigma01[0], sigma01[1]), 1.0 - sigma01[0] - sigma01[1]);
+		vec2 grad_minsig = vec2(dFdx(minsig), dFdy(minsig));
+		float offset = 0.5*length(grad_minsig);
+		float wire_lambda = smoothstep(
+			clamp(wire_threshold - offset, 0.0, 1.0),
+			clamp(wire_threshold + offset, 0.0, 1.0), minsig);
+		clr.rgb = (1.0 - wire_lambda)*wire_color + wire_lambda * clr.rgb;
+	}
+	finish_fragment(clr);
+}

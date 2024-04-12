@@ -1,0 +1,211 @@
+﻿#version 150
+
+uniform sampler2D col_tex_0;
+uniform sampler2D col_tex_1;
+uniform sampler2D dep_tex_0;
+uniform sampler2D dep_tex_1;
+uniform sampler2D rnd_tex;
+
+uniform mat4 MVP_l;
+uniform mat4 MVP_r;
+uniform mat4 iMVP_l;
+uniform mat4 iMVP_r;
+
+uniform int w;
+uniform int h;
+uniform int mode;
+uniform int image_idx;
+uniform int image_type;
+uniform float min_depth = 0.0;
+uniform float max_depth = 1.0;
+uniform float depth_scale = 1.0;
+uniform bool discard_fragments_on_far_clipping_plane = true;
+uniform float z_far_epsilon = 0.001;
+uniform float remap_epsilon = 0.01;
+uniform float parallax_scale;
+uniform int anaglyph_mode;
+
+ /*<your_unforms_here>*/
+
+
+const vec4 Y = vec4(0.299, 0.587, 0.114, 0.0);
+
+in vec2 texcrd;
+
+out vec4 frag_color;
+
+float rescale_depth(in float depth)
+{
+    return fract(depth_scale * (clamp(1.0-depth, min_depth, max_depth) - min_depth) / (max_depth - min_depth));
+}
+
+vec3 remap_window_coords(in vec3 window, in vec3 size, in mat4 T, out vec2 t)
+{
+    /************************************************************************************
+     tasks 1.3.a:  remap window coordinates
+          Implement a remap method that maps the window coordinates of the left/right image
+          to the right/left image. Return the mapped coordinates (return value) and the texture
+          corrdinates in the other image (out vec2 t).
+          vec3 window - current x-,y-coordinates and depth
+          vec3 size   - window dimensions
+          mat4 T      - transformation matrix from window coordinates of left/right view to clip
+                        coordinates of rigth/left view*/
+
+     vec3 mapped_coord = window;
+     /*<your_code_here>*/
+     return mapped_coord;
+
+    /************************************************************************************/
+}
+
+bool check_visibility(in float d, in vec3 size, in mat4 T, in sampler2D other_dep_tex, in sampler2D other_col_tex,
+                      out vec2 p_texcrd_in_other_image, inout float d_remapped, inout vec4 c_remapped)
+{
+    // first check whether p_0 is before far clipping plane
+    if (discard_fragments_on_far_clipping_plane && d > 1.0 - z_far_epsilon)
+        return false;
+
+    // compute window coorindate in other image
+    vec3 p_window_r = remap_window_coords(vec3(gl_FragCoord.xy, d), size, T, p_texcrd_in_other_image);
+
+    // check for valid texture coordinates
+    if (p_texcrd_in_other_image.x < 0.0 || p_texcrd_in_other_image.x > 1.0)
+        return false;
+
+    /************************************************************************************
+     tasks 1.3.b:  Check for visibility
+          Set the color for the remapped pixel depending on its visibility. If it is visible use the
+          color of the color texture of the other image. If not display it in another color (e.g. green).
+          Write the resulting color to c_remapped.
+          To achieve this compare the depth values of the pixel in both images.
+          First compute the depth of the remapped point in the other image (d_remapped) by using its
+          texture sampler for the depth and the remapped texture coordinates.
+          Then compare d_remapped to the current depth (d). For this use the remap_epsilon variable
+          to make the comparison a bit more flexible. */
+
+     /*<your_code_here>*/
+
+    /************************************************************************************/
+
+    return true;
+}
+
+void main()
+{
+    // define size vector
+    vec3 size   = vec3(float(w), float(h), 1.0);
+
+    // lookup input color and depth textures at current texture location
+    float d_0 = texture(dep_tex_0, texcrd).x;
+    float d_1 = texture(dep_tex_1, texcrd).x;
+    vec4  c_0 = texture(col_tex_0, texcrd);
+    vec4  c_1 = texture(col_tex_1, texcrd);
+
+    // intialize remapped depths and color for the case that correspondence is not available
+    float d_r_in_0 = 1.0;
+    float d_l_in_1 = 1.0;
+    vec4  c_r_in_0 = vec4(0.0, 0.5, 0.0, 1.0);
+    vec4  c_l_in_1 = vec4(0.0, 0.5, 0.0, 1.0);
+
+    // check if surface point p_0 seen in left image is also visible in right image
+    vec2 p_0_texcrd_in_right_image = vec2(0.0);
+    bool p_0_visible_in_right_image = check_visibility(d_0, size, MVP_r * iMVP_l, dep_tex_1, col_tex_1,
+        p_0_texcrd_in_right_image, d_r_in_0, c_r_in_0);
+    // check if surface point p_1 seen in right image is also visible in left image
+    vec2 p_1_texcrd_in_left_image = vec2(0.0);
+    bool p_1_visible_in_left_image = check_visibility(d_1, size, MVP_l * iMVP_r, dep_tex_0, col_tex_0,
+        p_1_texcrd_in_left_image, d_l_in_1, c_l_in_1);
+    // 
+    switch (mode) {
+    case 0: // input
+        if (image_type == 0)
+            frag_color = image_idx == 0 ? c_0 : c_1;
+        else
+            frag_color = vec4(vec3(rescale_depth(image_idx == 0 ? d_0 : d_1)), 1.0);
+        break;
+    case 1: // random dot
+        frag_color = texture(rnd_tex, texcrd);
+        break;
+    case 2: // remapping
+        if (image_type == 0)
+            frag_color = image_idx == 0 ? c_r_in_0 : c_l_in_1;
+        else
+            frag_color = vec4(vec3(rescale_depth(image_idx == 0 ? d_r_in_0 : d_l_in_1)), 1.0);
+        break;
+    case 3: // parallax
+    {
+        /************************************************************************************
+         tasks 1.3.c:  parallax
+              calculate the difference between the texture coordinates in this view (texcrd) and the
+              corresponding texture coordinate in the other view (p_0_texcrd_in_right_image). 
+              Take care which view is selected in the UI (image_idx). And use a
+              suitable transfer function to display the values. You can also integrate the slider
+              parallax_scale to adjust the transfer function from the UI. */
+
+         /*<your_code_here>*/
+
+        /***********************************************************************************/
+        break;
+    }
+    case 4: // anaglyph     
+        switch (anaglyph_mode) {
+        case 0: // true
+            /************************************************************************************
+             tasks 1.2.a:  true anaglyph
+                  combine the color channels of each view in such a way that result in true anaglyph.
+                  You can utilize the 'Y' variable for this. */
+
+             /*<your_code_here>*/
+
+            /***********************************************************************************/
+            break;
+        case 1: // gray
+            /************************************************************************************
+             tasks 1.2.a:  gray anaglyph
+                  combine the color channels of each view in such a way that result in true anaglyph.
+                  You can utilize the 'Y' variable for this. */
+
+             /*<your_code_here>*/
+
+            /***********************************************************************************/
+            break;
+        case 2: // color
+            frag_color = vec4(c_0.r, c_1.g, c_1.b, 1.0);
+            break;
+        case 3: // half color
+            /************************************************************************************
+             tasks 1.2.a:  half color anaglyph
+                  combine the color channels of each view in such a way that result in true anaglyph.
+                  You can utilize the 'Y' variable for this. */
+
+             /*<your_code_here>*/
+
+            /***********************************************************************************/
+            break;
+        case 4: // optimized
+            /************************************************************************************
+             tasks 1.4.a:  optimized anaglyph
+                  here you can implement your own creative code to get even better anaglyph results */
+
+             /*<your_code_here>*/
+
+            /***********************************************************************************/
+            break;
+        }       
+        break;
+    case 5: // autostereogram
+    {
+        /************************************************************************************
+         tasks 1.4.b:  random dot autostereogram
+              You can utilize the random texture (rnd_tex) which was already created for this */
+
+         /*<your_code_here>*/
+
+        /***********************************************************************************/
+        break;
+    }
+    default:
+        frag_color = vec4(1.0, 1.0, 1.0, 1.0);
+        break;
+    }
+}

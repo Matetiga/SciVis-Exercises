@@ -1,0 +1,63 @@
+﻿#version 150
+
+struct sphere_parameter_space
+{
+    // parameter space with sphere center (position.xyz) at origin
+    vec3  m_tilde;  // silhouette center
+    vec3  x_tilde;  // orthogonal direction x with length roh
+    vec3  y_tilde;  // orthogonal direction y with length roh
+    vec3  e_tilde;  // eye point
+     /*<your_variables_here - also add in sphere_raycast.glgs>*/
+};
+
+uniform float radius;
+
+in vec4  position;
+in vec4  color;
+
+out mat3  NM;   // normal matrix
+out mat4  MV;   // model view matrix
+out mat4  MVP;  // model view projection matrix
+out vec4  color_gs;
+out sphere_parameter_space sps;
+
+
+//***** begin interface of view.glsl ***********************************
+mat4 get_modelview_matrix();
+mat4 get_projection_matrix();
+mat4 get_modelview_projection_matrix();
+mat4 get_inverse_modelview_matrix();
+mat4 get_inverse_modelview_projection_matrix();
+mat3 get_normal_matrix();
+mat3 get_inverse_normal_matrix();
+//***** end interface of view.glsl ***********************************
+
+
+void main()
+{
+    // compute normal transformation matrix
+    NM = get_normal_matrix();
+    // compute position transformation matrix
+    MV = get_modelview_matrix();
+    MVP = get_modelview_projection_matrix();
+    // compute sphere color
+    color_gs = color;
+
+    // use w component of gl_Position for sphere radius
+    gl_Position = position;
+    gl_Position.w = radius;
+
+    /************************************************************************************
+     tasks 2.1:  Compute the silhouette parameter 'sps' in parameter space (sphere
+                 center 'position.xyz' at origin). You can also use the vertex shader to 
+                 compute additional parameter that are invariant for the whole sphere and
+                 add them to the 'sphere_parameter_space' struct.
+    
+                 hints: The eye point in world coordinates is implicitly given by the inverse
+                 of the model view matrix MV.*/
+
+     /*<your_code_here>*/
+
+    /************************************************************************************/
+
+}

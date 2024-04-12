@@ -1,0 +1,97 @@
+﻿#version 150 
+
+//***** begin interface of fragment.glfs ***********************************
+uniform float gamma = 2.2;
+void finish_fragment(vec4 color);
+//***** end interface of fragment.glfs ***********************************
+
+mat4 get_projection_matrix();
+
+//***** begin interface of surface.glsl ***********************************
+vec4 compute_reflected_appearance(vec3 position_eye, vec3 normal_eye, vec4 color, int side);
+//***** end interface of surface.glsl ***********************************
+
+in vec3 position_eye;
+in vec4 color_fs;
+in vec3 position_ucyl;
+in vec3 eye_ucyl;
+in mat4 hM_ucyl_eye;
+in mat3 NM_ucyl_eye;
+
+
+bool compute_cylinder_intersection(in vec3 e_ucyl, in vec3 v_ucyl, out float lambda)
+{
+	/************************************************************************************
+	 tasks 2.2b:  Compute the lambda of the ray intersection with the cylinder (x=e+lambda*v).
+					Intersections are after e+v (lambda >= 1). The function should return true
+				    if an intersection is found and set out parameter lambda to first such lambda.
+				    As the case lambda = 1 arises where the bounding box touches the cylinder
+				    (x_ucyl=+-1 or y_ucyl=+-1) comparison is with respect to 1-epsilon (lambda > 0.999) to
+					avoid numerical problems. */
+
+	 /*<your_code_here>*/
+
+	/************************************************************************************/
+
+	return false;
+}
+
+void main()
+{
+	// the goal is to compute intersection x and normal n in unit cylinder coords
+	bool need_lambda = false;	// compute intersection with cylinder
+	vec3 x_ucyl = position_eye;
+	vec3 n_ucyl;
+
+	// check case where the rasterized fragment is inside the cylinder
+	need_lambda = true;
+	if (length(position_ucyl.xy) < 1.0) {
+		x_ucyl = position_ucyl;
+		need_lambda = false;
+
+		/************************************************************************************
+		 tasks 2.2b:  Check if fragments are on the planar sides of the cylinder by using the
+					    current position in unit cylinder coordinates (position_ucyl). If so set
+					    need_lambda to false (since no intersection computation has to be done).
+						Otherwise set lambda to true. Set the normal (n_ucyl) to vec3(0.0, 0.0, -+1.0)
+						depending on the side. */
+
+		 /*<your_code_here>*/
+
+		/************************************************************************************/
+	}
+
+	// if no valid intersection on planar cylinder faces found
+	if (need_lambda) {
+		// compute first intersection with cylinder barrel
+		vec3 v_ucyl = position_ucyl - eye_ucyl;
+		float lambda;
+
+		if (!compute_cylinder_intersection(eye_ucyl, v_ucyl, lambda))
+			discard;
+
+		x_ucyl = eye_ucyl + lambda * v_ucyl;
+
+		// discard solutions outside of plane slab
+		if (x_ucyl.z < 0.0 || x_ucyl.z > 1.0)
+			discard;
+
+		// extract normal in unit cylinder coords
+		n_ucyl = vec3(x_ucyl.xy, 0.0);
+	}
+
+	// transform intersection to eye coordinates
+	vec3 p_eye = (hM_ucyl_eye * vec4(x_ucyl, 1.0)).xyz;
+	vec3 n_eye = normalize(NM_ucyl_eye * n_ucyl);
+
+	/************************************************************************************
+	 tasks 2.2c:  Update gl_FragDepth with the corrected depth value for the intersection
+					point. */
+
+	 /*<your_code_here>*/
+
+	/************************************************************************************/
+
+	// compute color from illumination in eye coords
+	finish_fragment(compute_reflected_appearance(p_eye, n_eye, color_fs, 1));
+}

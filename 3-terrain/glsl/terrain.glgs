@@ -1,0 +1,50 @@
+#version 150
+#extension GL_EXT_geometry_shader4 : enable
+
+//***** begin interface of view.glsl ***********************************
+mat4 get_modelview_matrix();
+mat4 get_projection_matrix();
+mat4 get_modelview_projection_matrix();
+mat4 get_inverse_modelview_matrix();
+mat4 get_inverse_modelview_projection_matrix();
+mat3 get_normal_matrix();
+mat3 get_inverse_normal_matrix();
+//***** end interface of view.glsl ***********************************
+
+uniform sampler2D dem_tex;
+uniform vec3 extent;
+uniform bool triangular;
+uniform int N;
+
+in vec2 texcrd_gs[];
+in vec4 tc_edges[];
+in vec3 color_gs[];
+
+out vec3 pos_eye;
+out vec2 texcrd;
+out vec3 color;
+out vec2 sigma01;
+
+void emit_vertex(in vec2 tc, in vec2 sig)
+{
+	sigma01 = sig;
+	float height = extent.z*texture(dem_tex, tc).x;
+	vec3 pos_wrl = vec3((tc-0.5/N)*extent.xy - 0.5*extent.xy, height);
+	vec4 hpos_eye = get_modelview_matrix()*vec4(pos_wrl, 1.0);
+	pos_eye = (1.0 / hpos_eye.w) * hpos_eye.xyz;
+	texcrd = tc;
+	gl_Position = get_projection_matrix()*hpos_eye;
+	EmitVertex();
+}
+
+void main()
+{
+	color = color_gs[0];
+	vec2 tc = texcrd_gs[0];
+	vec4 td = tc_edges[0];
+	emit_vertex(tc,         vec2(1.0,0.0));
+	emit_vertex(tc + td.xy, vec2(0.0, 1.0));
+	emit_vertex(tc + td.zw, vec2(0.0, 0.0));
+	if (!triangular)
+		emit_vertex(tc + td.xy + td.zw, vec2(1.0, 0.0));
+}

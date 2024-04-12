@@ -1,0 +1,38 @@
+#version 150 
+
+in vec3 min_pnt;
+in vec3 max_pnt;
+in vec4 color;
+
+out mat3 NM;
+out mat4 PM;
+out vec4 color_gs;
+
+//***** begin interface of view.glsl ***********************************
+mat4 get_modelview_matrix();
+mat4 get_projection_matrix();
+mat4 get_modelview_projection_matrix();
+mat4 get_inverse_modelview_matrix();
+mat4 get_inverse_modelview_projection_matrix();
+mat3 get_normal_matrix();
+mat3 get_inverse_normal_matrix();
+//***** end interface of view.glsl ***********************************
+
+void main()
+{
+	// compute normal transformation matrix
+	NM = get_normal_matrix();
+
+	// compute box transformation
+	mat4 BM = mat4(0.0);
+	vec3 E = max_pnt - min_pnt;
+	vec3 C = 0.5*(min_pnt + max_pnt);
+	BM[0][0] = E[0];
+	BM[1][1] = E[1];
+	BM[2][2] = E[2];
+	BM[3] = vec4(C, 1.0);
+	PM = get_modelview_matrix() * BM;
+
+	color_gs = color;
+	gl_Position = vec4(C,1.0);
+}

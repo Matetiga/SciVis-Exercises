@@ -1,0 +1,54 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/cpp
+{
+	"name": "SciVis Exercise",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	// "postCreateCommand": "gcc -v",
+
+	// Configure tool-specific properties.
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-vscode.cpptools",
+				"twxs.cmake",
+				"ms-vscode.cmake-tools",
+				"vadimcn.vscode-lldb"
+			]
+		}
+	},
+	"runArgs": [
+		"-e", "DISPLAY=host.docker.internal:0",
+		"-v", "/tmp/.X11-unix:/tmp/.X11-unix"
+	]
+	/*
+
+		The configured runArgs are assuming you are using Docker (Desktop) on Windows. If you are using Linux, adjust the DISPLAY variable accordingly.
+		For Windows, an X server needs to run on the host machine on Display 0. Possible are for example VcXsrv or MobaXTerm. 
+
+		On Linux a valid configuration could be:
+
+		"runArgs": [
+				"-e", "DISPLAY=${env:DISPLAY}",
+				"-v", "/tmp/.X11-unix:/tmp/.X11-unix"
+		]
+
+		It will also be necessary to allow the container to connect to the X server. This can be done by running the following command on the host machine:
+		
+		xhost local:root
+
+		Feel free to also try out other configurations on Linux, such as directly using the host network.
+
+	*/
+
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+}
