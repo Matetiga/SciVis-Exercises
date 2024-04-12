@@ -49,6 +49,8 @@ To build, press `F1` and type `CMake: Configure` and `CMake: Build`, or use the 
 
 *Note: It is also possible to use devcontainers with docker for advanced users, for more see [here](#markdown-header-using-devcontainers-advanced-users).*
 
+Alternatively, you may follow the following instructions to build from command line on Windows or Linux:
+
 ### Building on Windows
 
 Using Visual Studio 2022 (recommended and tested), initialize and generate the solution with:
