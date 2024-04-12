@@ -3,9 +3,10 @@
 ## Prerequisites
 
 Ensure you have the following installed:
-- **Git**
-- **CMake** version 3.24 or higher
-- A **C++ compiler** that supports C++17
+
+* **Git**
+* **CMake** version 3.24 or higher
+* **C++ compiler** that supports C++17
 
 ## Installation
 
@@ -40,12 +41,13 @@ Visual Studio Code can be used on both Windows and Linux. When you open the proj
 Use the CMake extension to configure and build the project. Configuration should occur automatically upon opening, but you can adjust settings as needed and configure again. A launch configuration will be automatically generated to allow running and debugging exercises.
 
 For building:
-- On Windows, the CodeLLDB extension is used.
-- On Linux, either CodeLLDB or cppdbg may be used.
+
+* On Windows, the CodeLLDB extension is used.
+* On Linux, either CodeLLDB or cppdbg may be used.
 
 To build, press `F1` and type `CMake: Configure` and `CMake: Build`, or use the buttons in the bottom left corner. Ensure the build target is set to `all`.
 
-*Note: It is also possible to use devcontainers with docker for advanced users, for more see [here](#using-devcontainers-advanced-users).*
+*Note: It is also possible to use devcontainers with docker for advanced users, for more see [here](#markdown-header-using-devcontainers-advanced-users).*
 
 ### Building on Windows
 
@@ -103,8 +105,9 @@ Building with other systems like the *.pj build system is possible. For more det
 Ensure you have Docker installed. This setup includes a preconfigured environment using a devcontainer, ideal if you are familiar with Docker and devcontainers.
 
 Note: Exercises require a functioning X11 server for visual output.
-- **Windows**: Use tools like VcXSrv or MobaXTerm. Configure these tools to allow more permissive connections.
-- **Linux**: Allow connections to your X11 server with:
+
+* **Windows**: Use tools like VcXSrv or MobaXTerm. Configure these tools to allow more permissive connections.
+* **Linux**: Allow connections to your X11 server with:
 
   ```bash
   xhost local:root
