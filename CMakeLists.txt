@@ -31,4 +31,4 @@ add_subdirectory("1-stereo")
 add_subdirectory("0-intro")
 
 # Visual Studio fluff
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT intro)
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT task0_framework)
