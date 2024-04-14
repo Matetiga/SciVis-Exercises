@@ -62,7 +62,7 @@ public:
 	particle() :
 		node("particle")
 	{
-		file_name = "../data/molecule_C34H40F2N4O4.sdf";
+		file_name = "./data/molecule_C34H40F2N4O4.sdf";
 		radius = 0.25f;
 		show_spheres = true;
 		show_cylinders = true;
