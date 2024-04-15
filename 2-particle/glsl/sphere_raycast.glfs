@@ -1,4 +1,4 @@
-﻿#version 150 
+#version 150 
 
 uniform int culling_mode = 0;
 uniform int map_color_to_material = 0;

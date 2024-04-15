@@ -1,4 +1,4 @@
-﻿#version 150 
+#version 150 
 
 //***** begin interface of fragment.glfs ***********************************
 uniform float gamma = 2.2;

@@ -1,4 +1,4 @@
-﻿#version 150
+#version 150
 #extension GL_EXT_geometry_shader4 : enable
 
 struct sphere_parameter_space
