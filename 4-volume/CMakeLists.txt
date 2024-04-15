@@ -28,6 +28,9 @@ cgv_add_target(task4_volume
     DEPENDENCIES
         cgv_utils cgv_type cgv_reflect cgv_data cgv_signal cgv_base cgv_media cgv_gui cgv_render cgv_gl glew plot cg_fltk crg_stereo_view crg_antialias crg_depth_of_field crg_light cmi_io crg_grid cgv_viewer cg_ext
 
+    OVERRIDE_SHARED_EXPORT_DEFINE
+		VOL_DATA_EXPORTS
+
     ADDITIONAL_CMDLINE_ARGS
         "config:\"${CMAKE_CURRENT_LIST_DIR}/config.def\""
 )
