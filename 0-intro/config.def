@@ -5,6 +5,7 @@ type(cgv_demo):text_face_attrib=2
 type(cgv_demo):fb_bgcolor_r=0.8
 type(cgv_demo):fb_bgcolor_g=0.9
 type(cgv_demo):fb_bgcolor_b=1
+type(cgv_demo):wireframe=false
 type(cgv_demo):draw_backside=true
 
 /// Task 1.1: Set the custom tesselation of the quad to be used initially by cgv_demo via

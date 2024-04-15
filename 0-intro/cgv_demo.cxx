@@ -62,6 +62,9 @@ protected:
 	// values around.
 	float fb_bgcolor_r, fb_bgcolor_g, fb_bgcolor_b;
 
+	// Whether to use wireframe mode (helps visually debugging the custom tesselation task)
+	bool wireframe;
+
 	// Whether to draw the backside of the quad
 	bool draw_backside;
 
@@ -110,7 +113,7 @@ public:
 		  fb_resolution(512, 256), fb_invalid(true),
 		  texture("uint8[R,G,B,A]", cgv::render::TF_LINEAR, cgv::render::TF_LINEAR),
 		  fb_bgcolor_r(0.9f), fb_bgcolor_g(0.9f), fb_bgcolor_b(0.9f),
-		  bgcolor(fb_bgcolor_r, fb_bgcolor_g, fb_bgcolor_b), draw_backside(true)
+		  bgcolor(fb_bgcolor_r, fb_bgcolor_g, fb_bgcolor_b), draw_backside(true), wireframe(false)
 	{
 		// Make sure the font server knows about the fonts packaged with the exercise
 		cgv::scan_fonts("./data/Fonts");
@@ -146,6 +149,7 @@ public:
 			rh.reflect_member("fb_bgcolor_r", fb_bgcolor_r) &&
 			rh.reflect_member("fb_bgcolor_g", fb_bgcolor_g) &&
 			rh.reflect_member("fb_bgcolor_b", fb_bgcolor_b) &&
+			rh.reflect_member("wireframe", wireframe) &&
 			rh.reflect_member("draw_backside", draw_backside);
 	}
 
@@ -323,9 +327,11 @@ public:
 		cgv::signal::connect(ctrl->check_value, this, &cgv_demo::gui_check_value);
 		cgv::signal::connect(ctrl->value_change, this, &cgv_demo::gui_value_changed);
 
-		// Finally, another simple control for setting the offscreen framebuffer
-		// background color
+		// Finally, simple controls for setting the offscreen framebuffer background color
 		add_member_control(this, "tex background", bgcolor);
+
+		// ... for the switch to draw wireframes
+		add_member_control(this, "wireframe rendering", wireframe);
 
 		// ... and for the switch to disable drawing the backside of the quad.
 		add_member_control(this, "draw backside", draw_backside);
@@ -451,6 +457,11 @@ public:
 		////
 		// Draw the contents of this node.
 
+		// Observe wireframe mode
+		glPushAttrib(GL_POLYGON_BIT);
+		if (wireframe)
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 		// Shortcut to the built-in default shader with lighting and texture support
 		cgv::render::shader_program& default_shader =
 			ctx.ref_default_shader_program(true /* true for texture support */);
@@ -488,7 +499,6 @@ public:
 		// Draw back side
 		ctx.mul_modelview_matrix(cgv::math::rotate4(180.0, 0.0, 1.0, 0.0));
 		ctx.mul_modelview_matrix(cgv::math::scale4(-1.0, 1.0, 1.0));
-		glPushAttrib(GL_POLYGON_BIT);
 		glCullFace(GL_FRONT);
 		//*****************************************************************/
 		// Task 1.1: If enabled, render the quad with custom tesselation
