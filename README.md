@@ -109,6 +109,10 @@ scivis
     |- cgv           --> CGV framework repository as a submodule
 ```
 
+## Reference solutions
+
+You can find compiled reference solutions for Windows and Linux on the [Bitbucket Download page](https://bitbucket.org/cgvtud/scivis/downloads/).
+
 ## Additional Information
 
 Building with other systems like the *.pj build system is possible. For more details, refer to the [CGV framework official documentation](https://sgumhold.github.io/cgv/install.html).
