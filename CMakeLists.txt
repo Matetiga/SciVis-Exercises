@@ -4,9 +4,9 @@ set(COURSE_NAME "SciVis")
 project(${COURSE_NAME} C CXX)
 
 # pre-set CGV Framework options
-option(CGV_BUILD_EXAMPLES off)
-option(CGV_BUILD_WITH_AUDIO off)
-option(CGV_STDCPP17 on)
+option(CGV_BUILD_EXAMPLES "" off)
+option(CGV_BUILD_WITH_AUDIO "" off)
+option(CGV_STDCPP17 "" on)
 
 # Include the CGV Framework
 if (DEFINED ENV{CGV_DIR})
