@@ -60,7 +60,7 @@ You will be asked to set a few options before the IDE actually opens the project
 * `task3_terrain`
 * `task4_volume`
 
-In fact, if you open the exercise project in IDEA or CLion, you can build and run the exercises by directly clicking on one of the items in the above list directly from this README which will be displayed automatically when you open the project for the first time.
+In fact, if you open the exercise project in IDEA or CLion, you can build and run the exercises directly by clicking on one of the items in the above list right from this README (which will be displayed automatically when you open the project for the first time).
 
 > **NOTE**: Sometimes the IDE might not recognize that the launch configs have been generated, resulting in the error message *"Executable not found"*. Typically, this error message appearing will already trigger the IDE to reload the configs and subsequent runs should just work. If not, simply use the menu item "Reload All From Disk" from the main menu, or simply hit `CTRL`+`ALT`+`Y`
 
