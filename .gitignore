@@ -2,8 +2,15 @@
 cmake-build*
 build
 
-# Ignore Jetbrains configurations
-.idea
+# Ignore Visual Studio files
+*.vs
+Debug
+Release
+ipch
 
-# Ignore later changes to the VSCode configuration
+# Ignore VS Code configuration
 .vscode
+
+# Ignore JetBrains configurations
+.idea
+.run
