@@ -34,36 +34,6 @@ The project builds are managed using CMake. Start by navigating to the project's
 cd scivis
 ```
 
-### Cross-Platform: Visual Studio Code
-
-Visual Studio Code can be used on both Windows and Linux. When you open the project, Visual Studio Code will recommend necessary extensions.
-
-Use the CMake extension to configure and build the project. Configuration should occur automatically upon opening, but you can adjust settings as needed and configure again. A launch configuration will be automatically generated to allow running and debugging exercises.
-
-For building:
-
-* On Windows, the CodeLLDB extension is used.
-* On Linux, either CodeLLDB or cppdbg may be used.
-
-To build, press `F1` and type `CMake: Configure` and `CMake: Build`, or use the buttons in the bottom left corner. Ensure the build target is set to `all`.
-
-*Note: It is also possible to use devcontainers with docker for advanced users, for more see [here](#markdown-header-using-devcontainers-advanced-users).*
-
-### Cross-Platform: JetBrains IDEs (IDEA, CLion)
-
-C/C++-enabled IDEs from JetBrains can be used on both Windows and Linux. Similarly to VS Code, you simply open the folder where you checked out the exercise repository.
-
-You will be asked to set a few options before the IDE actually opens the project. You can leave everything at the defaults and simply hit `OK`. Launch configs for the `Debug` configuration will be created automatically for all exercises. Simply select the appropriate target from the list of all defined targets in the toolbar to build and run or debug an exercise:
-* `task0_framework`
-* `task1_stereo`
-* `task2_particle`
-* `task3_terrain`
-* `task4_volume`
-
-In fact, if you open the exercise project in IDEA or CLion, you can build and run the exercises directly by clicking on one of the items in the above list right from this README (which will be displayed automatically when you open the project for the first time).
-
-> **NOTE**: Sometimes the IDE might not recognize that the launch configs have been generated, resulting in the error message *"Executable not found"*. Typically, this error message appearing will already trigger the IDE to reload the configs and subsequent runs should just work. If not, simply use the menu item "Reload All From Disk" from the main menu, or simply hit `CTRL`+`ALT`+`Y`
-
 ### Building on Windows
 
 Using Visual Studio 2022 (recommended and tested), initialize and generate the solution with:
@@ -82,7 +52,7 @@ Be advised that not all versions of Visual Studio are supported. Tested versions
 
 --------
 
-Once configured, open `SciVis.sln` in the `cmake-build` directory. 
+Once configured, open `SciVis.sln` in the `cmake-build` directory.
 
 On the right side (in the Solution Explorer), you will see a list of projects. Right-click on the project you want to build and select 'Set as StartUp Project'. Then either press `F5` or click on the green play button to build and run the project.
 
@@ -104,6 +74,37 @@ To run an exercise, navigate to the build directory and execute:
 ```bash
 ./cmake-build/run_intro.sh
 ```
+
+### Cross-Platform: Visual Studio Code
+
+Visual Studio Code can be used on both Windows and Linux. When you open the project, Visual Studio Code will recommend necessary extensions.
+
+Use the CMake extension to configure and build the project. Configuration should occur automatically upon opening, but you can adjust settings as needed and configure again. A launch configuration will be automatically generated to allow running and debugging exercises.
+
+For building:
+
+* On Windows, the CodeLLDB extension is used.
+* On Linux, either CodeLLDB or cppdbg may be used.
+
+To build, press `F1` and type `CMake: Configure` and `CMake: Build`, or use the buttons in the bottom left corner. Ensure the build target is set to `all`.
+
+*Note: It is also possible to use devcontainers with docker for advanced users, for more see [here](#markdown-header-using-devcontainers-advanced-users).*
+
+### Cross-Platform: JetBrains IDEs (IDEA, CLion)
+
+C/C++-enabled IDEs from JetBrains can be used on both Windows and Linux. Similarly to VS Code, you simply open the folder where you checked out the exercise repository.
+
+You will be asked to set a few options before the IDE actually opens the project. You can leave everything at the defaults and simply hit `OK`. Launch configs for the `Debug` configuration will be created automatically for all exercises. Simply select the appropriate target from the list of all defined targets in the toolbar to build and run or debug an exercise:
+
+* `task0_framework`
+* `task1_stereo`
+* `task2_particle`
+* `task3_terrain`
+* `task4_volume`
+
+In fact, if you open the exercise project in IDEA or CLion, you can build and run the exercises directly by clicking on one of the items in the above list right from this README (which will be displayed automatically when you open the project for the first time).
+
+> **NOTE**: Sometimes the IDE might not recognize that the launch configs have been generated, resulting in the error message *"Executable not found"*. Typically, this error message appearing will already trigger the IDE to reload the configs and subsequent runs should just work. If not, simply use the menu item "Reload All From Disk" from the main menu, or simply hit `CTRL`+`ALT`+`Y`
 
 ## Project Structure
 
