@@ -96,11 +96,11 @@ C/C++-enabled IDEs from JetBrains can be used on both Windows and Linux. Similar
 
 You will be asked to set a few options before the IDE actually opens the project. You can leave everything at the defaults and simply hit `OK`. Launch configs for the `Debug` configuration will be created automatically for all exercises. Simply select the appropriate target from the list of all defined targets in the toolbar to build and run or debug an exercise:
 
-* `task0_framework`
-* `task1_stereo`
-* `task2_particle`
-* `task3_terrain`
-* `task4_volume`
+* `task0_framework (Debug)`, or (once you set up a **Release** build config) `task0_framework`
+* `task1_stereo (Debug)`, or (once you set up a **Release** build config) `task1_stereo`
+* `task2_particle (Debug)`, or (once you set up a **Release** build config) `task2_particle`
+* `task3_terrain (Debug)`, or (once you set up a **Release** build config) `task3_terrain`
+* `task4_volume (Debug)`, or (once you set up a **Release** build config) `task4_volume`
 
 In fact, if you open the exercise project in IDEA or CLion, you can build and run the exercises directly by clicking on one of the items in the above list right from this README (which will be displayed automatically when you open the project for the first time).
 
