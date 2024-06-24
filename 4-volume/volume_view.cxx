@@ -116,7 +116,7 @@ protected:
 				/************************************************************************************/
 				case CS_TEMPERATURE: {
 					// get predefined cgv::rgb-color as emission value
-					reinterpret_cast<cgv::rgb&>(clr) = cgv::media::color_scale(v, (cgv::media::ColorScale)this->color_scale);
+					reinterpret_cast<cgv::rgb&>(clr) = cgv::media::color_scale(v, cgv::media::CS_TEMPERATURE);
 					break;
 				}
 			}
