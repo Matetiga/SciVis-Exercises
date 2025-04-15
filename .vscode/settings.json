@@ -1,4 +1,8 @@
 {
     "cmake.configureOnOpen": true,
-    "cmake.buildDirectory": "${workspaceFolder}/cmake-build"
+    "cmake.buildDirectory": "${workspaceFolder}/cmake-build",
+    "files.associations": {
+        "span": "cpp",
+        "type_traits": "cpp"
+    }
 }

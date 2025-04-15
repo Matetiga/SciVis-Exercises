@@ -8,6 +8,7 @@
 #include <cgv/utils/scan.h>
 #include <cgv/utils/file.h>
 #include <cgv/media/color_scale.h>
+#include <libs/cgv_reflect_types/math/fvec.h>
 #include <cgv/render/drawable.h>
 #include <cgv/render/texture.h>
 #include <cgv/render/shader_program.h>

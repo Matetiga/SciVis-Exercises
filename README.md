@@ -90,6 +90,8 @@ To build, press `F1` and type `CMake: Configure` and `CMake: Build`, or use the 
 
 *Note: It is also possible to use devcontainers with docker for advanced users, for more see [here](#markdown-header-using-devcontainers-advanced-users).*
 
+Using `ninja` enables faster multi-threaded compilation on Windows. However, even if it's installed system-wide, Visual Studio Code might not automatically recognize it as a generator. To work around this, you can manually specify `ninja` as the generator in your `settings.json` file. For more details, refer to [this issue](https://github.com/microsoft/vscode-cmake-tools/issues/134).
+
 ### Cross-Platform: JetBrains IDEs (IDEA, CLion)
 
 C/C++-enabled IDEs from JetBrains can be used on both Windows and Linux. Similarly to VS Code, you simply open the folder where you checked out the exercise repository.
@@ -132,6 +134,9 @@ You can find compiled reference solutions for Windows and Linux on the [Bitbucke
 Building with other systems like the *.pj build system is possible. For more details, refer to the [CGV framework official documentation](https://sgumhold.github.io/cgv/install.html).
 
 ### Using Devcontainers (Advanced Users)
+
+**Important Note: In the current commit the code in the DEV Container does not compile correctly. This will be fixed later**
+
 Ensure you have Docker installed. This setup includes a preconfigured environment using a devcontainer, ideal if you are familiar with Docker and devcontainers.
 
 Note: Exercises require a functioning X11 server for visual output.
