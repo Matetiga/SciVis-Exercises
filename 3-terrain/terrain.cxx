@@ -35,7 +35,7 @@ protected:
 	size_t N;
 	/// number of subdivisions along one coordinate axis in a triangle batch (1 corresponds to individual triangles, assumed to be power of 2)
 	unsigned subdivide_count;
-	/// depth of tree of right triangles 
+	/// depth of tree of right triangles
 	short tree_depth;
 	/// height value that corresponds to 1 (255 for 8-bit dem textures and 65535 for 16 bit)
 	unsigned max_dem_value;
@@ -57,7 +57,7 @@ protected:
 	{
 		// diamond point - texel location in the range [0,N]
 		short x, y;
-		// length of triangle along short edge of triangles in even levels and along long edge for triangles in odd levels 
+		// length of triangle along short edge of triangles in even levels and along long edge for triangles in odd levels
 		short base_length;
 		// triangle orientation in the range [0,7]
 		short omega;
@@ -90,7 +90,7 @@ protected:
 	static unsigned log2i(unsigned v)
 	{
 		unsigned targetlevel = 0;
-		while (v >>= 1) 
+		while (v >>= 1)
 			++targetlevel;
 		return targetlevel;
 	}
@@ -153,9 +153,17 @@ protected:
 	}
 	//@}
 
+    bool ensure_view_ptr()
+    {
+        if (view_ptr)
+            return true;
+        view_ptr = find_view_as_node();
+        return view_ptr != 0;
+    }
+
 	/**@name adaptation*/
 	//@{
-	/// per tex the radius of a sphere in world space 
+	/// per tex the radius of a sphere in world space
 	std::vector<float> radii, radii_cache;
 	/// the height error, scaled such that heights range in [0,1] and the world error is computed by multiplying with extent(2)
 	std::vector<float> errors, errors_cache;
@@ -239,13 +247,13 @@ protected:
 		std::cout << "root radius = " << root_radius << std::endl;
 		
 	}
-	//! function is used recursively starting from the root to compute all diamond error values 
+	//! function is used recursively starting from the root to compute all diamond error values
 	/*! It returns the error value of the passed node. */
 	float compute_error(const triangle_node& n)
 	{
 		/************************************************************************************
 		 tasks 3.2a: Implement a nested height error calculation on the hierarchy of right triangles
-					   based on the isotropic error e_t. Do this in a recursive way over all 
+					   based on the isotropic error e_t. Do this in a recursive way over all
 					   triangles belonging to the current diamond. Store the result also in the errors-vector.
 					   You can use the processed-vector to store if a certain node was already
 					   calculated to avoid multiple computations of the same node.
@@ -281,7 +289,7 @@ protected:
 	/// based on adaptation mode check whether triangle is accurate
 	bool is_accurate(const triangle_node& n) const
 	{
-		// if no adaption mode is defined 
+		// if no adaption mode is defined
 		if (adaptation_mode == AM_NONE)
 			return true;
 
@@ -483,8 +491,8 @@ protected:
 	float error_lambda;
 	/// blend in radius based color mapping
 	float radius_lambda;
-	/// compute triangle color based on the lambdas for color, error and radius 
-	static cgv::rgb get_orientation_color(short omega) 
+	/// compute triangle color based on the lambdas for color, error and radius
+	static cgv::rgb get_orientation_color(short omega)
 	{
 		static cgv::rgb colors[8] = {
 			{ 1.0f, 0.0f, 0.0f },
@@ -498,7 +506,7 @@ protected:
 		};
 		return colors[omega];
 	}
-	/// compute triangle color based on the lambdas for color, error and radius 
+	/// compute triangle color based on the lambdas for color, error and radius
 	cgv::rgb get_triangle_node_color(const triangle_node& n)
 	{
 		unsigned idx = n.y*((unsigned)N + 1) + n.x;
@@ -572,14 +580,13 @@ public:
 		color_tex.set_wrap_s(cgv::render::TW_CLAMP_TO_EDGE);
 
 		// use simple BRDF for AMD compatibility
-		material.set_brdf_type(
-			(cgv::media::illum::BrdfType)(cgv::media::illum::BT_LAMBERTIAN | cgv::media::illum::BT_PHONG)
-		);
-		material.ref_specular_reflectance() = { .09375f, .09375f, .09375f };
-		material.ref_roughness() = .03125f;
+		material.brdf_type =
+			(cgv::media::illum::BrdfType)(cgv::media::illum::BT_LAMBERTIAN | cgv::media::illum::BT_PHONG);
+		material.specular_reflectance = { .09375f, .09375f, .09375f };
+		material.roughness = .03125f;
 		srs.material = material;
-		srs.material.ref_specular_reflectance() *= .0625f;
-		srs.material.ref_roughness() *= .125f;
+		srs.material.specular_reflectance *= .0625f;
+		srs.material.roughness *= .125f;
 	}
 	/// return type name
 	std::string get_type_name() const
@@ -666,11 +673,20 @@ public:
 	/// this method is called to draw a frame
 	void draw(cgv::render::context& ctx)
 	{
+
+        // If we didn't initialze a texture yet, return
+        if (N == 0)
+            return;
+
 		if (!terrain_prog.is_linked())
 			return;
 
-		eye_world = view_ptr->get_eye();
-		view_factor = float(ctx.get_height()/(2*view_ptr->get_tan_of_half_of_fovy(false)));
+        // If no view is available, return
+        if (ensure_view_ptr()) {
+            eye_world = view_ptr->get_eye();
+            view_factor = float(ctx.get_height()/(2*view_ptr->get_tan_of_half_of_fovy(false)));
+        }
+
 
 		// change nothing if adaptive mode is set to AM_NONE
 		if (adaptation_mode != AM_NONE || positions.empty()) {
@@ -826,7 +842,7 @@ public:
 	{
 
 	}
-	/// 
+	///
 	void create_gui()
 	{
 		add_decorator("terrain", "heading");

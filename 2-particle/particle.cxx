@@ -1,4 +1,4 @@
-// This source code is property of the Computer Graphics and Visualization chair of the
+﻿// This source code is property of the Computer Graphics and Visualization chair of the
 // TU Dresden. Do not distribute! 
 // Copyright (C) CGV TU Dresden - All Rights Reserved
 
@@ -70,14 +70,12 @@ public:
 		plane_offset = 0;
 		show_plane = false;
 
-		material_mol.set_brdf_type(
-			(cgv::media::illum::BrdfType)(cgv::media::illum::BT_LAMBERTIAN | cgv::media::illum::BT_PHONG)
-		);
-		material_mol.ref_specular_reflectance() = { .0625f, .0625f, .0625f };
-		material_mol.ref_roughness() = .0625f;
+		material_mol.brdf_type = (cgv::media::illum::BrdfType)(cgv::media::illum::BT_LAMBERTIAN | cgv::media::illum::BT_PHONG);
+		material_mol.specular_reflectance = { .0625f, .0625f, .0625f };
+		material_mol.roughness = .0625f;
 		material_plane = material_mol;
-		material_plane.ref_diffuse_reflectance() = { .389f, .354f, .0084f };
-		material_plane.ref_roughness() = .015625f;
+		material_plane.diffuse_reflectance = { .389f, .354f, .0084f };
+		material_plane.roughness = .015625f;
 	}
 
 
@@ -180,6 +178,13 @@ public:
 		return true;
 	}
 
+    bool ensure_view_ptr()
+    {
+        if (view_ptr)
+            return true;
+        view_ptr = find_view_as_node();
+        return view_ptr != 0;
+    }
 
 	/// initialize everything that needs the context
 	bool init(context& ctx)
@@ -273,6 +278,11 @@ public:
 	/// this method is called to draw a frame
 	void draw(context& ctx)
 	{
+        // If no view_ptr is available yet, return
+        if (!ensure_view_ptr())
+            return;
+
+
 		ctx.set_material(material_mol);
 		if (show_spheres) {
 			// Enable shader program we want to use for drawing
@@ -322,12 +332,6 @@ public:
 			ctx.pop_modelview_matrix();
 			glEnable(GL_CULL_FACE);
 		}
-	}
-
-
-	void destruct(context& ctx)
-	{
-
 	}
 
 

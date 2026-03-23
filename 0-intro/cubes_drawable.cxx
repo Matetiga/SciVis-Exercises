@@ -24,26 +24,26 @@
 
 
 // ************************************************************************************/
-// Task 1.2a: Create a drawable that provides a (for now, empty) GUI and supports
+// Task 0.2a: Create a drawable that provides a (for now, empty) GUI and supports
 //            reflection, so that its properties can be set via config file.
 //
-// Task 1.2b: Utilize the cubes_fractal class to render a fractal of hierarchically
+// Task 0.2b: Utilize the cubes_fractal class to render a fractal of hierarchically
 //            transformed cubes. Expose its recursion depth and color properties to GUI
 //            manipulation and reflection. Set reasonable values via the config
 //            file.
 //
-// Task 1.2c: Implement an option (configurable via GUI and config file) to use a vertex
+// Task 0.2c: Implement an option (configurable via GUI and config file) to use a vertex
 //            array object for rendering the cubes. The vertex array functionality 
 //            should support (again, configurable via GUI and config file) both
 //            interleaved (as in cgv_demo.cpp) and non-interleaved attributes.
 
 // < your code here >
 
-// [END] Tasks 1.2a, 1.2b and 1.2c
+// [END] Tasks 0.2a, 0.2b and 0.2c
 // ************************************************************************************/
 
 
 // ************************************************************************************/
-// Task 1.2a: register an instance of your drawable.
+// Task 0.2a: register an instance of your drawable.
 
 // < your code here >

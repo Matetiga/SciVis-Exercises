@@ -69,14 +69,14 @@ protected:
 	bool draw_backside;
 
 	//*********************************************************************************/
-	// Task 1.1: Add some data member to indicate whether to use custom tesselation of
+	// Task 0.1: Add some data member to indicate whether to use custom tesselation of
 	//           the quad or the one built into the cgv::render::context. Make sure to
 	//           initialize this to "do not use custom quad" when constructing the
 	//           object.
 
 	// < your code here >
 
-	// [END] Task 1.1
+	// [END] Task 0.1
 	//*********************************************************************************/
 
 
@@ -115,11 +115,6 @@ public:
 		  fb_bgcolor_r(0.9f), fb_bgcolor_g(0.9f), fb_bgcolor_b(0.9f),
 		  bgcolor(fb_bgcolor_r, fb_bgcolor_g, fb_bgcolor_b), draw_backside(true), wireframe(false)
 	{
-		// Make sure the font server knows about the fonts packaged with the exercise
-		cgv::scan_fonts("./data/Fonts");
-		font_face = cgv::media::font::find_font_or_default("Open Sans", true)->get_font_face(
-			(cgv::media::font::FontFaceAttributes)text_face_attrib
-		);
 		
 	}
 
@@ -137,7 +132,7 @@ public:
 		// integers for the purpose of reflection. A fix is in development.
 		unsigned* text_face_attrib_uint = (unsigned*)&text_face_attrib;
 
-		// Task 1.1: make sure your quad tesselation toggle can be set via config
+		// Task 0.1: make sure your quad tesselation toggle can be set via config
 		//           file.
 		// Reflect the properties
 		return
@@ -186,7 +181,7 @@ public:
 		}
 
 		//*****************************************************************************/
-		// Task 1.1: [OPTIONAL] If necessary, add additional handling for your custom
+		// Task 0.1: [OPTIONAL] If necessary, add additional handling for your custom
 		//           quad toggle here.
 
 		//*****************************************************************************/
@@ -251,7 +246,7 @@ public:
 		}
 
 		//*****************************************************************************/
-		// Task 1.1: [OPTIONAL] If necessary, add additional handling for your custom
+		// Task 0.1: [OPTIONAL] If necessary, add additional handling for your custom
 		//           quad toggle here.
 
 		//*****************************************************************************/
@@ -268,7 +263,7 @@ public:
 			fb_invalid = true;
 
 		//*****************************************************************************/
-		// Task 1.1: [OPTIONAL] If necessary, add additional handling for your custom
+		// Task 0.1: [OPTIONAL] If necessary, add additional handling for your custom
 		//           quad toggle here.
 
 		//*****************************************************************************/
@@ -337,12 +332,12 @@ public:
 		add_member_control(this, "draw backside", draw_backside);
 
 		//*****************************************************************************/
-		// Task 1.1: add a GUI control to switch between custom tesselation of the quad
+		// Task 0.1: add a GUI control to switch between custom tesselation of the quad
 		//           and the one built into the cgv::render::context.
 
 		// < Your code here >
 
-		// [END] Task 1.1
+		// [END] Task 0.1
 		//*****************************************************************************/
 	}
 
@@ -352,6 +347,13 @@ public:
 	// the initialization was successful, false otherwise.
 	bool init(cgv::render::context& ctx)
 	{
+
+		// Make sure the font server knows about the fonts packaged with the exercise
+		cgv::scan_fonts("./data/Fonts");
+		font_face = cgv::media::font::find_font_or_default("Open Sans", true)->get_font_face(
+			(cgv::media::font::FontFaceAttributes)text_face_attrib
+		);
+
 		// Keep track of success - do it this way (instead of e.g. returning false
 		// immediatly) to perform every init step even if some go wrong.
 		bool success = true;
@@ -489,7 +491,7 @@ public:
 		));
 		// Draw front side
 		//*********************************************************************/
-		// Task 1.1: If enabled, render the quad with custom tesselation
+		// Task 0.1: If enabled, render the quad with custom tesselation
 		//           instead of using tesselate_unit_square(). You can invoke
 		//           the method draw_my_unit_square() for this.
 			ctx.tesselate_unit_square();
@@ -501,7 +503,7 @@ public:
 		ctx.mul_modelview_matrix(cgv::math::scale4(-1.0, 1.0, 1.0));
 		glCullFace(GL_FRONT);
 		//*****************************************************************/
-		// Task 1.1: If enabled, render the quad with custom tesselation
+		// Task 0.1: If enabled, render the quad with custom tesselation
 		//           instead of using tesselate_unit_square(). Again, you
 		//           can invoke the method draw_my_unit_square() for this.
 			if (draw_backside)
@@ -541,7 +543,9 @@ public:
 };
 
 // Create an instance of the demo class at plugin load and register it with the framework
-cgv::base::object_registration<cgv_demo> cgv_demo_registration("");
+cgv::base::object_registration<cgv_demo> cgv_demo_registration(
+	"cgv_demo" // <-- some arbitrary registration event tag that can be useful for advanced debugging
+);
 
 // The following could be used to register the class with the framework but NOT create it
 // upon plugin load. Instead, the user can create an instance from the application menu.

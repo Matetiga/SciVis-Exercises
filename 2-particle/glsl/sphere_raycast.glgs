@@ -1,5 +1,7 @@
-#version 150
-#extension GL_EXT_geometry_shader4 : enable
+﻿#version 150
+
+layout(points) in;
+layout(triangle_strip, max_vertices = 4) out;
 
 struct sphere_parameter_space
 {
@@ -80,5 +82,5 @@ void main()
     color_fs = color_gs[0];
 
     // emits the corners of a rectangle covering the silhouette of a sphere
-    generate_sphere_cover_quad(gl_PositionIn[0], sps[0], MV[0], MVP[0], NM[0]);
+    generate_sphere_cover_quad(gl_in[0].gl_Position, sps[0], MV[0], MVP[0], NM[0]);
 }

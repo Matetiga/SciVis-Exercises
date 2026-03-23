@@ -24,11 +24,9 @@
 cubes_fractal::cubes_fractal()
 	: va(nullptr), va_num_verts(0), va_primitive_type(GL_QUADS)
 {
-	material.set_brdf_type(
-		(cgv::media::illum::BrdfType)(cgv::media::illum::BT_LAMBERTIAN | cgv::media::illum::BT_PHONG)
-	);
-	material.ref_specular_reflectance() = {.0625f, .0625f, .0625f};
-	material.ref_roughness() = .03125f;
+	material.brdf_type = (cgv::media::illum::BrdfType)(cgv::media::illum::BT_LAMBERTIAN | cgv::media::illum::BT_PHONG);
+	material.specular_reflectance = {.0625f, .0625f, .0625f};
+	material.roughness = .03125f;
 }
 
 void cubes_fractal::use_vertex_array (
@@ -50,7 +48,7 @@ void cubes_fractal::draw_recursive (
 	ctx.mul_modelview_matrix(cgv::math::scale4<double>(0.5, 0.5, 0.5));
 
 	// Render the cube
-	material.set_diffuse_reflectance(color);
+	material.diffuse_reflectance = color;
 	ctx.set_material(material);
 	if (va)
 	{

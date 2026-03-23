@@ -118,7 +118,7 @@ protected:
 				case CS_TEMPERATURE: {
 					// get predefined cgv::rgb-color as emission value
 					reinterpret_cast<cgv::rgb&>(clr) = cgv::media::color_scale(v, cgv::media::CS_TEMPERATURE);
-					break;
+                    break;
 				}
 			}
 
@@ -161,7 +161,7 @@ public:
 		oblique_slice_normal = cgv::vec3(0.0f, 0.0f, 1.0f);
 		oblique_slice_distance = 0.5f;
 		volume_clipping_box = cgv::box3(cgv::vec3(0.0f, 0.0f, 0.0f), cgv::vec3(1.0f, 1.0f, 1.0f));
-		box_material.set_diffuse_reflectance(cgv::rgb(0.2f, 0.2f, 1.0f));
+		box_material.diffuse_reflectance = cgv::rgb(0.2f, 0.2f, 1.0f);
 		wire_box_color = cgv::rgb(0, 0.7f, 0.9f);
 		raycasting_step_width = 0.01f;
 		emission_gamma = 1;

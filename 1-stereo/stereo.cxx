@@ -6,6 +6,7 @@
 #include <cgv/base/register.h>
 #include <cgv/data/data_view.h>
 #include <cgv/math/ftransform.h>
+#include <cgv/math/fmat.h>
 #include <cgv/media/mesh/simple_mesh.h>
 #include <cgv_reflect_types/media/color.h>
 #include <cgv_gl/gl/gl.h> // includes also GL/gl.h
@@ -183,11 +184,9 @@ public:
         rnd_tex.set_min_filter(TF_NEAREST);
         rnd_tex.set_mag_filter(TF_NEAREST);
 
-        srs.material.set_brdf_type(
-            (cgv::media::illum::BrdfType)(cgv::media::illum::BT_LAMBERTIAN | cgv::media::illum::BT_PHONG)
-        );
-        srs.material.ref_specular_reflectance() = {.0625f, .0625f, .0625f};
-        srs.material.ref_roughness() = .0625f;
+        srs.material.brdf_type = (cgv::media::illum::BrdfType)(cgv::media::illum::BT_LAMBERTIAN | cgv::media::illum::BT_PHONG);
+        srs.material.specular_reflectance = {.0625f, .0625f, .0625f};
+        srs.material.roughness = .0625f;
         material = srs.material;
 
         enabled = false;
@@ -681,7 +680,7 @@ public:
         glViewport(0, 0, ctx.get_width(), ctx.get_height());
 
         // get the inverse model-view-projection matrices
-        cgv::mat4 iMVP[2] = { inv(MVP[0]), inv(MVP[1]) };
+        cgv::mat4 iMVP[2] = { inverse(MVP[0]), inverse(MVP[1]) };
 
         // enable color and depth textures
         col_texs[0].enable(ctx, 0);
@@ -757,7 +756,7 @@ public:
     }
 
 
-    void destruct(context& ctx)
+    void clear(context& ctx)
     {
         ref_sphere_renderer(ctx, -1);
     }

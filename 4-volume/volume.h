@@ -7,7 +7,7 @@
 
 #include "lib_begin.h"
 
-class CGV_API volume
+class volume
 {
 public:
 	typedef float coord_type;

@@ -1,5 +1,4 @@
 #version 330
-#extension GL_EXT_geometry_shader4 : enable
 
 layout(points) in;
 layout(triangle_strip, max_vertices = 24) out;
