@@ -51,6 +51,15 @@ protected:
 	// so here is not necessary
 	cgv::rgba bgcolor;
 
+	enum RenderMode {
+		BUILTIN,
+		INTERLEAVED,
+		NON_INTERLEAVED,
+		SINGLE_VERTEX_BUFFER,
+	};
+
+	RenderMode mode;
+
 	struct vertex {
 		cgv::vec3 pos;
 		cgv::vec3 normal;
@@ -60,13 +69,19 @@ protected:
 	cgv::render::vertex_buffer vb;
 	cgv::render::attribute_array_binding vertex_array;
 
+	std::vector<cgv::vec3> positions;
+	std::vector<cgv::vec3> normals;
+
+	cgv::render::vertex_buffer vb_pos, vb_norm;
+	cgv::render::attribute_array_binding vao_non_interleaved;
+
 	// for the fractal structure
 	cubes_fractal fractal;
 
 public:
 	cubes_drawable():
 		fb_bgcolor_r(0.8f), fb_bgcolor_g(0.8f), fb_bgcolor_b(0.1f),
-		bgcolor(fb_bgcolor_r, fb_bgcolor_g, fb_bgcolor_b)
+		bgcolor(fb_bgcolor_r, fb_bgcolor_g, fb_bgcolor_b), mode(BUILTIN)
 	{
 	}
 
@@ -89,6 +104,89 @@ public:
 			rh.reflect_member("fb_bgcolor_b", fb_bgcolor_b);
 	}
 
+	void init_cube_geometry()
+	{
+		vertices.clear();
+
+		// ---------- FRONT (+Z) ----------
+		{
+			cgv::vec3 n(0, 0, 1);
+
+			vertices.push_back({ {-1,-1,  1}, n });
+			vertices.push_back({ { 1,-1,  1}, n });
+			vertices.push_back({ { 1, 1,  1}, n });
+
+			vertices.push_back({ {-1,-1,  1}, n });
+			vertices.push_back({ { 1, 1,  1}, n });
+			vertices.push_back({ {-1, 1,  1}, n });
+		}
+
+		// ---------- BACK (-Z) ----------
+		{
+			cgv::vec3 n(0, 0, -1);
+
+			vertices.push_back({ { 1,-1, -1}, n });
+			vertices.push_back({ {-1,-1, -1}, n });
+			vertices.push_back({ {-1, 1, -1}, n });
+
+			vertices.push_back({ { 1,-1, -1}, n });
+			vertices.push_back({ {-1, 1, -1}, n });
+			vertices.push_back({ { 1, 1, -1}, n });
+		}
+
+		// ---------- LEFT (-X) ----------
+		{
+			cgv::vec3 n(-1, 0, 0);
+
+			vertices.push_back({ {-1,-1, -1}, n });
+			vertices.push_back({ {-1,-1,  1}, n });
+			vertices.push_back({ {-1, 1,  1}, n });
+
+			vertices.push_back({ {-1,-1, -1}, n });
+			vertices.push_back({ {-1, 1,  1}, n });
+			vertices.push_back({ {-1, 1, -1}, n });
+		}
+
+		// ---------- RIGHT (+X) ----------
+		{
+			cgv::vec3 n(1, 0, 0);
+
+			vertices.push_back({ { 1,-1,  1}, n });
+			vertices.push_back({ { 1,-1, -1}, n });
+			vertices.push_back({ { 1, 1, -1}, n });
+
+			vertices.push_back({ { 1,-1,  1}, n });
+			vertices.push_back({ { 1, 1, -1}, n });
+			vertices.push_back({ { 1, 1,  1}, n });
+		}
+
+		// ---------- TOP (+Y) ----------
+		{
+			cgv::vec3 n(0, 1, 0);
+
+			vertices.push_back({ {-1, 1,  1}, n });
+			vertices.push_back({ { 1, 1,  1}, n });
+			vertices.push_back({ { 1, 1, -1}, n });
+
+			vertices.push_back({ {-1, 1,  1}, n });
+			vertices.push_back({ { 1, 1, -1}, n });
+			vertices.push_back({ {-1, 1, -1}, n });
+		}
+
+		// ---------- BOTTOM (-Y) ----------
+		{
+			cgv::vec3 n(0, -1, 0);
+
+			vertices.push_back({ {-1,-1, -1}, n });
+			vertices.push_back({ { 1,-1, -1}, n });
+			vertices.push_back({ { 1,-1,  1}, n });
+
+			vertices.push_back({ {-1,-1, -1}, n });
+			vertices.push_back({ { 1,-1,  1}, n });
+			vertices.push_back({ {-1,-1,  1}, n });
+		}
+	}
+
 	void on_set(void* member_ptr)
 	{
 		if (member_ptr == &fb_bgcolor_r || member_ptr == &fb_bgcolor_g || member_ptr == &fb_bgcolor_b)
@@ -107,6 +205,13 @@ public:
 			fb_bgcolor_b = bgcolor.B();
 		}
 
+		if (mode == BUILTIN)
+			fractal.use_vertex_array(nullptr, 0, GL_TRIANGLES);
+		else if (mode == INTERLEAVED)
+			fractal.use_vertex_array(&vertex_array, vertices.size(), GL_TRIANGLES);
+		else if (mode == NON_INTERLEAVED)
+			fractal.use_vertex_array(&vao_non_interleaved, vertices.size(), GL_TRIANGLES);
+
 		if (this->is_visible())
 			post_redraw();
 	}
@@ -123,6 +228,9 @@ public:
 	void create_gui(void)
 	{
 		add_member_control(this, "tex background", bgcolor);
+
+		add_member_control(this, "Render Mode", mode, "dropdown",
+			"enums='BUILTIN,INTERLEAVED,NON_INTERLEAVED,SINGLE_VERTEX_BUFFER'");
 	}
 
 	// used for the cgv::render::drawable interface
@@ -156,10 +264,48 @@ public:
 			vertices.size(), // number of normal elements in the array
 			sizeof(vertex) // stride from one element to next
 		) && success;
+
+		positions.clear();
+		normals.clear();
+		for (auto& v : vertices) {
+			positions.push_back(v.pos);
+			normals.push_back(v.normal);
+		}
+
+		vb_pos.create(ctx, &positions[0], positions.size());
+		vb_norm.create(ctx, &normals[0], normals.size());
+
+		vao_non_interleaved.create(ctx);
+
+		// POSITION
+		vao_non_interleaved.set_attribute_array(
+			ctx, surf_shader.get_position_index(),
+			vec3type, vb_pos,
+			0,
+			positions.size(),
+			sizeof(cgv::vec3)
+		);
+
+		// NORMAL
+		vao_non_interleaved.set_attribute_array(
+			ctx, surf_shader.get_normal_index(),
+			vec3type, vb_norm,
+			0,
+			normals.size(),
+			sizeof(cgv::vec3)
+		);
 		
 
 		//  generate the fractal structure 
-		fractal.use_vertex_array(&vertex_array, vertices.size(), GL_TRIANGLES);
+		//fractal.use_vertex_array(&vertex_array, vertices.size(), GL_TRIANGLES);
+
+		if (mode == BUILTIN)
+			fractal.use_vertex_array(nullptr, 0, GL_TRIANGLES);
+		else if (mode == INTERLEAVED)
+			fractal.use_vertex_array(&vertex_array, vertices.size(), GL_TRIANGLES);
+		else if (mode == NON_INTERLEAVED)
+			fractal.use_vertex_array(&vao_non_interleaved, vertices.size(), GL_TRIANGLES);
+
 
 		return success;
 	}
