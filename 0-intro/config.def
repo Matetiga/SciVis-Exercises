@@ -14,3 +14,6 @@ type(cgv_demo):draw_backside=true
 
 
 /// Task 0.2: Set appropriate values for your drawable that renders the cube fractal.
+type(cubes_drawable):fb_bgcolor_r=0.7
+type(cubes_drawable):fb_bgcolor_g=0.1
+type(cubes_drawable):fb_bgcolor_b=0.05
