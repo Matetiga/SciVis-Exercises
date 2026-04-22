@@ -43,13 +43,14 @@ class cubes_drawable :
 	public cgv::render::drawable
 {
 protected:
-	float fb_bgcolor_r, fb_bgcolor_g, fb_bgcolor_b;
+	float cube_color_r, cube_color_g, cube_color_b;
+	int recursion_level;
 
 	// an offscreen framebuffer is a buffer that contains information which should not be directly rendered to the screen
 	// but instead is used as a texture for rendering to the screen
 	// In the demo, it is used to render text to a texture, which is then applied to a quade
 	// so here is not necessary
-	cgv::rgba bgcolor;
+	cgv::rgba cube_color;
 
 	enum RenderMode {
 		BUILTIN,
@@ -79,13 +80,15 @@ protected:
 	cubes_fractal fractal;
 
 public:
-	cubes_drawable():
-		fb_bgcolor_r(0.1f), fb_bgcolor_g(0.1f), fb_bgcolor_b(0.1f),
-		bgcolor(fb_bgcolor_r, fb_bgcolor_g, fb_bgcolor_b), mode(BUILTIN)
+	cubes_drawable() :
+		cube_color_r(1.0f), cube_color_g(1.0f), cube_color_b(0.0f),
+		cube_color(cube_color_r, cube_color_g, cube_color_b),
+		recursion_level(3),
+		mode(BUILTIN)
 	{
 	}
 
-	// what does this make?
+	// what does this make? --> it names the plugin (top left corner of the app window)
 	// it is necessary to give a name to the type of the drawable, so that it can be
 	// identified in the scene graph and used in config files, etc.
 	std::string get_type_name() const
@@ -99,29 +102,34 @@ public:
 	bool self_reflect(cgv::reflect::reflection_handler& rh)
 	{
 		return
-			rh.reflect_member("fb_bgcolor_r", fb_bgcolor_r) &&
-			rh.reflect_member("fb_bgcolor_g", fb_bgcolor_g) &&
-			rh.reflect_member("fb_bgcolor_b", fb_bgcolor_b);
+			rh.reflect_member("cube_color_r", cube_color_r) &&
+			rh.reflect_member("cube_color_g", cube_color_g) &&
+			rh.reflect_member("cube_color_b", cube_color_b) &&
+			rh.reflect_member("recursion_level", recursion_level);
 	}
 
 
 	void on_set(void* member_ptr)
 	{
-		if (member_ptr == &fb_bgcolor_r || member_ptr == &fb_bgcolor_g || member_ptr == &fb_bgcolor_b)
+		 /// Color update 
+		if (member_ptr == &cube_color_r|| member_ptr == &cube_color_g|| member_ptr == &cube_color_b)
 		{
-			bgcolor.R() = fb_bgcolor_r;
-			bgcolor.G() = fb_bgcolor_g;
-			bgcolor.B() = fb_bgcolor_b;
-			update_member(&bgcolor);
+			cube_color.R() = cube_color_r;
+			cube_color.G() = cube_color_g;
+			cube_color.B() = cube_color_b;
+			update_member(&cube_color);
 		}
 
 		// this will be used when the user sets new values with the GUI
-		if (member_ptr == &bgcolor)
+		if (member_ptr == &cube_color)
 		{
-			fb_bgcolor_r = bgcolor.R();
-			fb_bgcolor_g = bgcolor.G();
-			fb_bgcolor_b = bgcolor.B();
+			cube_color_r = cube_color.R();
+			cube_color_g = cube_color.G();
+			cube_color_b = cube_color.B();
 		}
+
+		/// Recursion Level Update
+		//if(member_ptr == &recursion_level)
 
 		if (mode == BUILTIN)
 			fractal.use_vertex_array(nullptr, 0, GL_TRIANGLES);
@@ -130,22 +138,42 @@ public:
 		else if (mode == NON_INTERLEAVED)
 			fractal.use_vertex_array(&vao_non_interleaved, vertices.size(), GL_TRIANGLES);
 
+		// make sure the GUI reflects new state in the case the write did not originate form GUI interaction
+		update_member(member_ptr);
+
 		if (this->is_visible())
 			post_redraw();
 	}
 
-	// this was only necessary to for the screen resolution values in demo
-	// maybe remove ?
 	bool gui_check_value(cgv::gui::control<int>& ctrl)
 	{
+		if (ctrl.controls(&recursion_level))
+		{
+			// clamping the recursion
+			if (recursion_level < 0)
+				recursion_level = 0;
+			else if (recursion_level > 8)
+				recursion_level = 8;
+		}
 		return true;
 	}
 
+	// this is called when the user changes a value in the GUI, after the value has been validated by gui_check_value
+	void gui_value_changed(cgv::gui::control<int>& ctrl)
+	{
+		post_redraw();
+	}
 
 	// used for the cgv::gui::provider interface
 	void create_gui(void)
 	{
-		add_member_control(this, "tex background", bgcolor);
+		cgv::gui::control<int>* ctrl = add_control(
+			"Recusion Level", recursion_level, "value_slider", "min=0;max=8;step=1;ticks=true"
+		).operator->();
+		cgv::signal::connect(ctrl->check_value, this, &cubes_drawable::gui_check_value);
+		cgv::signal::connect(ctrl->value_change, this, &cubes_drawable::gui_value_changed);
+
+		add_member_control(this, "Cube Color", cube_color);
 
 		add_member_control(this, "Render Mode", mode, "dropdown",
 			"enums='BUILTIN,INTERLEAVED,NON_INTERLEAVED,SINGLE_VERTEX_BUFFER'");
@@ -229,7 +257,8 @@ public:
 	{
 
 		glPushAttrib(GL_COLOR_BUFFER_BIT | GL_VIEWPORT_BIT | GL_POLYGON_BIT);
-		glClearColor(bgcolor.R(), bgcolor.G(), bgcolor.B(), bgcolor.alpha());
+		//glClearColor(cube_color.R(), cube_color.G(), cube_color.B(), cube_color.alpha()); // this might be responsible for the background changing color;
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		// create the def shader twice?? (so is on the demo)
@@ -241,7 +270,7 @@ public:
 
 
 		// draw_recursive already draws the first cube
-		fractal.draw_recursive(ctx, cgv::rgb(1.0f, 1.0f, 0.0f), 3, 0);
+		fractal.draw_recursive(ctx, cgv::rgb(cube_color.R(), cube_color.G(), cube_color.B()), recursion_level, 0);
 		
 		
 
