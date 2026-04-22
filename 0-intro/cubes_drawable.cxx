@@ -22,6 +22,8 @@
 // Local includes
 #include "cubes_fractal.h"
 
+// for cgv_demo
+#define FB_MAX_RESOLUTION 2048
 
 // ************************************************************************************/
 // Task 0.2a: Create a drawable that provides a (for now, empty) GUI and supports
@@ -43,13 +45,14 @@ class cubes_drawable :
 	public cgv::render::drawable
 {
 protected:
-	float fb_bgcolor_r, fb_bgcolor_g, fb_bgcolor_b;
+	float cube_color_r, cube_color_g, cube_color_b;
+	int recursion_level;
 
 	// an offscreen framebuffer is a buffer that contains information which should not be directly rendered to the screen
 	// but instead is used as a texture for rendering to the screen
 	// In the demo, it is used to render text to a texture, which is then applied to a quade
 	// so here is not necessary
-	cgv::rgba bgcolor;
+	cgv::rgba cube_color;
 
 	enum RenderMode {
 		BUILTIN,
@@ -78,6 +81,7 @@ protected:
 	// for the fractal structure
 	cubes_fractal fractal;
 
+
 	std::vector<vertex> all_vertices;
 	cgv::render::vertex_buffer vb_all;
 	cgv::render::attribute_array_binding vao_all;
@@ -85,13 +89,15 @@ protected:
 	bool rebuild_geometry;
 
 public:
-	cubes_drawable():
-		fb_bgcolor_r(0.8f), fb_bgcolor_g(0.8f), fb_bgcolor_b(0.1f),
-		bgcolor(fb_bgcolor_r, fb_bgcolor_g, fb_bgcolor_b), mode(BUILTIN),rebuild_geometry(false)
+	cubes_drawable() :
+		cube_color_r(1.0f), cube_color_g(1.0f), cube_color_b(0.0f),
+		cube_color(cube_color_r, cube_color_g, cube_color_b),
+		recursion_level(3),
+		mode(BUILTIN), rebuild_geometry(false)
 	{
 	}
 
-	// what does this make?
+	// what does this make? --> it names the plugin (top left corner of the app window)
 	// it is necessary to give a name to the type of the drawable, so that it can be
 	// identified in the scene graph and used in config files, etc.
 	std::string get_type_name() const
@@ -105,110 +111,33 @@ public:
 	bool self_reflect(cgv::reflect::reflection_handler& rh)
 	{
 		return
-			rh.reflect_member("fb_bgcolor_r", fb_bgcolor_r) &&
-			rh.reflect_member("fb_bgcolor_g", fb_bgcolor_g) &&
-			rh.reflect_member("fb_bgcolor_b", fb_bgcolor_b);
+			rh.reflect_member("cube_color_r", cube_color_r) &&
+			rh.reflect_member("cube_color_g", cube_color_g) &&
+			rh.reflect_member("cube_color_b", cube_color_b) &&
+			rh.reflect_member("recursion_level", recursion_level);
 	}
 
-	void init_cube_geometry()
-	{
-		vertices.clear();
 
-		// ---------- FRONT (+Z) ----------
-		{
-			cgv::vec3 n(0, 0, 1);
-
-			vertices.push_back({ {-1,-1,  1}, n });
-			vertices.push_back({ { 1,-1,  1}, n });
-			vertices.push_back({ { 1, 1,  1}, n });
-
-			vertices.push_back({ {-1,-1,  1}, n });
-			vertices.push_back({ { 1, 1,  1}, n });
-			vertices.push_back({ {-1, 1,  1}, n });
-		}
-
-		// ---------- BACK (-Z) ----------
-		{
-			cgv::vec3 n(0, 0, -1);
-
-			vertices.push_back({ { 1,-1, -1}, n });
-			vertices.push_back({ {-1,-1, -1}, n });
-			vertices.push_back({ {-1, 1, -1}, n });
-
-			vertices.push_back({ { 1,-1, -1}, n });
-			vertices.push_back({ {-1, 1, -1}, n });
-			vertices.push_back({ { 1, 1, -1}, n });
-		}
-
-		// ---------- LEFT (-X) ----------
-		{
-			cgv::vec3 n(-1, 0, 0);
-
-			vertices.push_back({ {-1,-1, -1}, n });
-			vertices.push_back({ {-1,-1,  1}, n });
-			vertices.push_back({ {-1, 1,  1}, n });
-
-			vertices.push_back({ {-1,-1, -1}, n });
-			vertices.push_back({ {-1, 1,  1}, n });
-			vertices.push_back({ {-1, 1, -1}, n });
-		}
-
-		// ---------- RIGHT (+X) ----------
-		{
-			cgv::vec3 n(1, 0, 0);
-
-			vertices.push_back({ { 1,-1,  1}, n });
-			vertices.push_back({ { 1,-1, -1}, n });
-			vertices.push_back({ { 1, 1, -1}, n });
-
-			vertices.push_back({ { 1,-1,  1}, n });
-			vertices.push_back({ { 1, 1, -1}, n });
-			vertices.push_back({ { 1, 1,  1}, n });
-		}
-
-		// ---------- TOP (+Y) ----------
-		{
-			cgv::vec3 n(0, 1, 0);
-
-			vertices.push_back({ {-1, 1,  1}, n });
-			vertices.push_back({ { 1, 1,  1}, n });
-			vertices.push_back({ { 1, 1, -1}, n });
-
-			vertices.push_back({ {-1, 1,  1}, n });
-			vertices.push_back({ { 1, 1, -1}, n });
-			vertices.push_back({ {-1, 1, -1}, n });
-		}
-
-		// ---------- BOTTOM (-Y) ----------
-		{
-			cgv::vec3 n(0, -1, 0);
-
-			vertices.push_back({ {-1,-1, -1}, n });
-			vertices.push_back({ { 1,-1, -1}, n });
-			vertices.push_back({ { 1,-1,  1}, n });
-
-			vertices.push_back({ {-1,-1, -1}, n });
-			vertices.push_back({ { 1,-1,  1}, n });
-			vertices.push_back({ {-1,-1,  1}, n });
-		}
-	}
-
+	// this method is called after the value of a reflected variable has been changed with the GUI
+	// so this method is not used to assign the changes of the GUI to the backend
+	// it is only needed if extra functionality must be added after changing somethin
 	void on_set(void* member_ptr)
 	{
-		if (member_ptr == &fb_bgcolor_r || member_ptr == &fb_bgcolor_g || member_ptr == &fb_bgcolor_b)
+		 /// Color update 
+		if (member_ptr == &cube_color_r|| member_ptr == &cube_color_g|| member_ptr == &cube_color_b)
 		{
-			bgcolor.R() = fb_bgcolor_r;
-			bgcolor.G() = fb_bgcolor_g;
-			bgcolor.B() = fb_bgcolor_b;
-			update_member(&bgcolor);
+			cube_color.R() = cube_color_r;
+			cube_color.G() = cube_color_g;
+			cube_color.B() = cube_color_b;
+			update_member(&cube_color);
 		}
 
-		// is this vice versa necessary ? (as shown in the demo)
-		if (member_ptr == &bgcolor)
+		// this will be used when the user sets new values with the GUI
+		if (member_ptr == &cube_color)
 		{
-			fb_bgcolor_r = bgcolor.R();
-			fb_bgcolor_g = bgcolor.G();
-			fb_bgcolor_b = bgcolor.B();
+			cube_color_r = cube_color.R();
+			cube_color_g = cube_color.G();
+			cube_color_b = cube_color.B();
 		}
 
 		if (member_ptr == &mode) {
@@ -222,6 +151,9 @@ public:
 		else if (mode == NON_INTERLEAVED)
 			fractal.use_vertex_array(&vao_non_interleaved, vertices.size(), GL_TRIANGLES);
 		
+
+		// make sure the GUI reflects new state in the case the write did not originate form GUI interaction
+		update_member(member_ptr);
 
 		if (this->is_visible())
 			post_redraw();
@@ -314,14 +246,33 @@ public:
 	// maybe remove ?
 	bool gui_check_value(cgv::gui::control<int>& ctrl)
 	{
+		if (ctrl.controls(&recursion_level))
+		{
+			// clamping the recursion
+			if (recursion_level < 0)
+				recursion_level = 0;
+			else if (recursion_level > 8)
+				recursion_level = 8;
+		}
 		return true;
 	}
 
+	// this is called when the user changes a value in the GUI, after the value has been validated by gui_check_value
+	void gui_value_changed(cgv::gui::control<int>& ctrl)
+	{
+		post_redraw();
+	}
 
 	// used for the cgv::gui::provider interface
 	void create_gui(void)
 	{
-		add_member_control(this, "tex background", bgcolor);
+		cgv::gui::control<int>* ctrl = add_control(
+			"Recusion Level", recursion_level, "value_slider", "min=0;max=8;step=1;ticks=true"
+		).operator->();
+		cgv::signal::connect(ctrl->check_value, this, &cubes_drawable::gui_check_value);
+		cgv::signal::connect(ctrl->value_change, this, &cubes_drawable::gui_value_changed);
+
+		add_member_control(this, "Cube Color", cube_color);
 
 		add_member_control(this, "Render Mode", mode, "dropdown",
 			"enums='BUILTIN,INTERLEAVED,NON_INTERLEAVED,SINGLE_VERTEX_BUFFER'");
@@ -390,9 +341,6 @@ public:
 		);
 		
 
-		//  generate the fractal structure 
-		//fractal.use_vertex_array(&vertex_array, vertices.size(), GL_TRIANGLES);
-
 		if (mode == BUILTIN)
 			fractal.use_vertex_array(nullptr, 0, GL_TRIANGLES);
 		else if (mode == INTERLEAVED)
@@ -420,19 +368,14 @@ public:
 
 		
 
+		// saving the current OpenGL state
+		// if glClearColor is used, the quad will also be affected
 		glPushAttrib(GL_COLOR_BUFFER_BIT | GL_VIEWPORT_BIT | GL_POLYGON_BIT);
-		glClearColor(bgcolor.R(), bgcolor.G(), bgcolor.B(), bgcolor.alpha());
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		// create the def shader twice?? (so is on the demo)
-		cgv::render::shader_program& surf_shader = ctx.ref_surface_shader_program(false);
-		surf_shader.enable(ctx);
-		
-		// what does this color affect 
-		ctx.set_color(cgv::rgb(1.0f));
 
 		ctx.push_modelview_matrix();
 
+		cgv::render::shader_program& surf_shader = ctx.ref_surface_shader_program(false);
+		surf_shader.enable(ctx);
 
 		//ctx.tesselate_unit_square();
 		if (mode == SINGLE_VERTEX_BUFFER) {
@@ -452,11 +395,9 @@ public:
 			fractal.draw_recursive(ctx, cgv::rgb(1.0f, 0.5f, 0.5f), 3, 0);
 		}
 		
-		
-
-		glPopAttrib();
 		ctx.pop_modelview_matrix();
 		surf_shader.disable(ctx);
+		glPopAttrib();
 	}
 	
 	void init_cube() 
@@ -494,12 +435,6 @@ public:
 		}
 	}
 
-	void draw_my_unit_cube(cgv::render::context& ctx)
-	{
-		vertex_array.enable(ctx);
-		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vertices.size());
-		vertex_array.disable(ctx);
-	}
 
 // [END] Tasks 0.2a, 0.2b and 0.2c
 // ************************************************************************************/
