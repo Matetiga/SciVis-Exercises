@@ -82,10 +82,12 @@ protected:
 	cgv::render::vertex_buffer vb_all;
 	cgv::render::attribute_array_binding vao_all;
 
+	bool rebuild_geometry;
+
 public:
 	cubes_drawable():
 		fb_bgcolor_r(0.8f), fb_bgcolor_g(0.8f), fb_bgcolor_b(0.1f),
-		bgcolor(fb_bgcolor_r, fb_bgcolor_g, fb_bgcolor_b), mode(BUILTIN)
+		bgcolor(fb_bgcolor_r, fb_bgcolor_g, fb_bgcolor_b), mode(BUILTIN),rebuild_geometry(false)
 	{
 	}
 
@@ -207,6 +209,10 @@ public:
 			fb_bgcolor_r = bgcolor.R();
 			fb_bgcolor_g = bgcolor.G();
 			fb_bgcolor_b = bgcolor.B();
+		}
+
+		if (member_ptr == &mode) {
+			rebuild_geometry = true;
 		}
 
 		if (mode == BUILTIN)
@@ -430,7 +436,8 @@ public:
 
 		//ctx.tesselate_unit_square();
 		if (mode == SINGLE_VERTEX_BUFFER) {
-			regenerate_geometry(ctx);
+			if(rebuild_geometry)
+				regenerate_geometry(ctx);
 
 			cgv::media::illum::surface_material mat;
 			mat.diffuse_reflectance = cgv::rgb(1.0f, 0.5f, 0.5f);
