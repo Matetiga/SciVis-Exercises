@@ -22,6 +22,8 @@
 // Local includes
 #include "cubes_fractal.h"
 
+// for cgv_demo
+#define FB_MAX_RESOLUTION 2048
 
 // ************************************************************************************/
 // Task 0.2a: Create a drawable that provides a (for now, empty) GUI and supports
@@ -79,6 +81,9 @@ protected:
 	// for the fractal structure
 	cubes_fractal fractal;
 
+
+
+
 public:
 	cubes_drawable() :
 		cube_color_r(1.0f), cube_color_g(1.0f), cube_color_b(0.0f),
@@ -109,6 +114,9 @@ public:
 	}
 
 
+	// this method is called after the value of a reflected variable has been changed with the GUI
+	// so this method is not used to assign the changes of the GUI to the backend
+	// it is only needed if extra functionality must be added after changing somethin
 	void on_set(void* member_ptr)
 	{
 		 /// Color update 
@@ -127,9 +135,6 @@ public:
 			cube_color_g = cube_color.G();
 			cube_color_b = cube_color.B();
 		}
-
-		/// Recursion Level Update
-		//if(member_ptr == &recursion_level)
 
 		if (mode == BUILTIN)
 			fractal.use_vertex_array(nullptr, 0, GL_TRIANGLES);
@@ -256,27 +261,21 @@ public:
 	void draw(cgv::render::context& ctx)
 	{
 
+		// saving the current OpenGL state
+		// if glClearColor is used, the quad will also be affected
 		glPushAttrib(GL_COLOR_BUFFER_BIT | GL_VIEWPORT_BIT | GL_POLYGON_BIT);
-		//glClearColor(cube_color.R(), cube_color.G(), cube_color.B(), cube_color.alpha()); // this might be responsible for the background changing color;
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		// create the def shader twice?? (so is on the demo)
-		cgv::render::shader_program& surf_shader = ctx.ref_surface_shader_program(false);
-		surf_shader.enable(ctx);
-		
 
 		ctx.push_modelview_matrix();
 
+		cgv::render::shader_program& surf_shader = ctx.ref_surface_shader_program(false);
+		surf_shader.enable(ctx);
 
 		// draw_recursive already draws the first cube
 		fractal.draw_recursive(ctx, cgv::rgb(cube_color.R(), cube_color.G(), cube_color.B()), recursion_level, 0);
 		
-		
-
-		glPopAttrib();
 		ctx.pop_modelview_matrix();
 		surf_shader.disable(ctx);
+		glPopAttrib();
 	}
 	
 	void init_cube() 
