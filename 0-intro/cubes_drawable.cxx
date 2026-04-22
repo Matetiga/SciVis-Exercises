@@ -80,7 +80,7 @@ protected:
 
 public:
 	cubes_drawable():
-		fb_bgcolor_r(0.8f), fb_bgcolor_g(0.8f), fb_bgcolor_b(0.1f),
+		fb_bgcolor_r(0.1f), fb_bgcolor_g(0.1f), fb_bgcolor_b(0.1f),
 		bgcolor(fb_bgcolor_r, fb_bgcolor_g, fb_bgcolor_b), mode(BUILTIN)
 	{
 	}
@@ -104,88 +104,6 @@ public:
 			rh.reflect_member("fb_bgcolor_b", fb_bgcolor_b);
 	}
 
-	void init_cube_geometry()
-	{
-		vertices.clear();
-
-		// ---------- FRONT (+Z) ----------
-		{
-			cgv::vec3 n(0, 0, 1);
-
-			vertices.push_back({ {-1,-1,  1}, n });
-			vertices.push_back({ { 1,-1,  1}, n });
-			vertices.push_back({ { 1, 1,  1}, n });
-
-			vertices.push_back({ {-1,-1,  1}, n });
-			vertices.push_back({ { 1, 1,  1}, n });
-			vertices.push_back({ {-1, 1,  1}, n });
-		}
-
-		// ---------- BACK (-Z) ----------
-		{
-			cgv::vec3 n(0, 0, -1);
-
-			vertices.push_back({ { 1,-1, -1}, n });
-			vertices.push_back({ {-1,-1, -1}, n });
-			vertices.push_back({ {-1, 1, -1}, n });
-
-			vertices.push_back({ { 1,-1, -1}, n });
-			vertices.push_back({ {-1, 1, -1}, n });
-			vertices.push_back({ { 1, 1, -1}, n });
-		}
-
-		// ---------- LEFT (-X) ----------
-		{
-			cgv::vec3 n(-1, 0, 0);
-
-			vertices.push_back({ {-1,-1, -1}, n });
-			vertices.push_back({ {-1,-1,  1}, n });
-			vertices.push_back({ {-1, 1,  1}, n });
-
-			vertices.push_back({ {-1,-1, -1}, n });
-			vertices.push_back({ {-1, 1,  1}, n });
-			vertices.push_back({ {-1, 1, -1}, n });
-		}
-
-		// ---------- RIGHT (+X) ----------
-		{
-			cgv::vec3 n(1, 0, 0);
-
-			vertices.push_back({ { 1,-1,  1}, n });
-			vertices.push_back({ { 1,-1, -1}, n });
-			vertices.push_back({ { 1, 1, -1}, n });
-
-			vertices.push_back({ { 1,-1,  1}, n });
-			vertices.push_back({ { 1, 1, -1}, n });
-			vertices.push_back({ { 1, 1,  1}, n });
-		}
-
-		// ---------- TOP (+Y) ----------
-		{
-			cgv::vec3 n(0, 1, 0);
-
-			vertices.push_back({ {-1, 1,  1}, n });
-			vertices.push_back({ { 1, 1,  1}, n });
-			vertices.push_back({ { 1, 1, -1}, n });
-
-			vertices.push_back({ {-1, 1,  1}, n });
-			vertices.push_back({ { 1, 1, -1}, n });
-			vertices.push_back({ {-1, 1, -1}, n });
-		}
-
-		// ---------- BOTTOM (-Y) ----------
-		{
-			cgv::vec3 n(0, -1, 0);
-
-			vertices.push_back({ {-1,-1, -1}, n });
-			vertices.push_back({ { 1,-1, -1}, n });
-			vertices.push_back({ { 1,-1,  1}, n });
-
-			vertices.push_back({ {-1,-1, -1}, n });
-			vertices.push_back({ { 1,-1,  1}, n });
-			vertices.push_back({ {-1,-1,  1}, n });
-		}
-	}
 
 	void on_set(void* member_ptr)
 	{
@@ -197,7 +115,7 @@ public:
 			update_member(&bgcolor);
 		}
 
-		// is this vice versa necessary ? (as shown in the demo)
+		// this will be used when the user sets new values with the GUI
 		if (member_ptr == &bgcolor)
 		{
 			fb_bgcolor_r = bgcolor.R();
@@ -296,9 +214,6 @@ public:
 		);
 		
 
-		//  generate the fractal structure 
-		//fractal.use_vertex_array(&vertex_array, vertices.size(), GL_TRIANGLES);
-
 		if (mode == BUILTIN)
 			fractal.use_vertex_array(nullptr, 0, GL_TRIANGLES);
 		else if (mode == INTERLEAVED)
@@ -321,15 +236,12 @@ public:
 		cgv::render::shader_program& surf_shader = ctx.ref_surface_shader_program(false);
 		surf_shader.enable(ctx);
 		
-		// what does this color affect 
-		ctx.set_color(cgv::rgb(1.0f));
 
 		ctx.push_modelview_matrix();
 
 
-		//ctx.tesselate_unit_square();
-		draw_my_unit_cube(ctx);
-		fractal.draw_recursive(ctx, cgv::rgb(1.0f, 0.5f, 0.5f), 3, 0);
+		// draw_recursive already draws the first cube
+		fractal.draw_recursive(ctx, cgv::rgb(1.0f, 1.0f, 0.0f), 3, 0);
 		
 		
 
@@ -373,12 +285,6 @@ public:
 		}
 	}
 
-	void draw_my_unit_cube(cgv::render::context& ctx)
-	{
-		vertex_array.enable(ctx);
-		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vertices.size());
-		vertex_array.disable(ctx);
-	}
 
 // [END] Tasks 0.2a, 0.2b and 0.2c
 // ************************************************************************************/
