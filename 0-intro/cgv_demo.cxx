@@ -337,7 +337,7 @@ public:
 		//           and the one built into the cgv::render::context.
 
 		// < Your code here >
-		add_member_control(this, "use vertex array", use_vertex_array, "check");
+		add_member_control(this, "custom quad", use_vertex_array, "toggle");
 		// [END] Task 0.1
 		//*****************************************************************************/
 	}
