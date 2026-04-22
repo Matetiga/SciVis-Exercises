@@ -51,6 +51,15 @@ protected:
 	// so here is not necessary
 	cgv::rgba bgcolor;
 
+	enum RenderMode {
+		BUILTIN,
+		INTERLEAVED,
+		NON_INTERLEAVED,
+		SINGLE_VERTEX_BUFFER,
+	};
+
+	RenderMode mode;
+
 	struct vertex {
 		cgv::vec3 pos;
 		cgv::vec3 normal;
@@ -60,13 +69,19 @@ protected:
 	cgv::render::vertex_buffer vb;
 	cgv::render::attribute_array_binding vertex_array;
 
+	std::vector<cgv::vec3> positions;
+	std::vector<cgv::vec3> normals;
+
+	cgv::render::vertex_buffer vb_pos, vb_norm;
+	cgv::render::attribute_array_binding vao_non_interleaved;
+
 	// for the fractal structure
 	cubes_fractal fractal;
 
 public:
 	cubes_drawable():
-		fb_bgcolor_r(0.8f), fb_bgcolor_g(0.8f), fb_bgcolor_b(0.1f),
-		bgcolor(fb_bgcolor_r, fb_bgcolor_g, fb_bgcolor_b)
+		fb_bgcolor_r(0.1f), fb_bgcolor_g(0.1f), fb_bgcolor_b(0.1f),
+		bgcolor(fb_bgcolor_r, fb_bgcolor_g, fb_bgcolor_b), mode(BUILTIN)
 	{
 	}
 
@@ -89,6 +104,7 @@ public:
 			rh.reflect_member("fb_bgcolor_b", fb_bgcolor_b);
 	}
 
+
 	void on_set(void* member_ptr)
 	{
 		if (member_ptr == &fb_bgcolor_r || member_ptr == &fb_bgcolor_g || member_ptr == &fb_bgcolor_b)
@@ -99,13 +115,20 @@ public:
 			update_member(&bgcolor);
 		}
 
-		// is this vice versa necessary ? (as shown in the demo)
+		// this will be used when the user sets new values with the GUI
 		if (member_ptr == &bgcolor)
 		{
 			fb_bgcolor_r = bgcolor.R();
 			fb_bgcolor_g = bgcolor.G();
 			fb_bgcolor_b = bgcolor.B();
 		}
+
+		if (mode == BUILTIN)
+			fractal.use_vertex_array(nullptr, 0, GL_TRIANGLES);
+		else if (mode == INTERLEAVED)
+			fractal.use_vertex_array(&vertex_array, vertices.size(), GL_TRIANGLES);
+		else if (mode == NON_INTERLEAVED)
+			fractal.use_vertex_array(&vao_non_interleaved, vertices.size(), GL_TRIANGLES);
 
 		if (this->is_visible())
 			post_redraw();
@@ -123,6 +146,9 @@ public:
 	void create_gui(void)
 	{
 		add_member_control(this, "tex background", bgcolor);
+
+		add_member_control(this, "Render Mode", mode, "dropdown",
+			"enums='BUILTIN,INTERLEAVED,NON_INTERLEAVED,SINGLE_VERTEX_BUFFER'");
 	}
 
 	// used for the cgv::render::drawable interface
@@ -156,10 +182,45 @@ public:
 			vertices.size(), // number of normal elements in the array
 			sizeof(vertex) // stride from one element to next
 		) && success;
+
+		positions.clear();
+		normals.clear();
+		for (auto& v : vertices) {
+			positions.push_back(v.pos);
+			normals.push_back(v.normal);
+		}
+
+		vb_pos.create(ctx, &positions[0], positions.size());
+		vb_norm.create(ctx, &normals[0], normals.size());
+
+		vao_non_interleaved.create(ctx);
+
+		// POSITION
+		vao_non_interleaved.set_attribute_array(
+			ctx, surf_shader.get_position_index(),
+			vec3type, vb_pos,
+			0,
+			positions.size(),
+			sizeof(cgv::vec3)
+		);
+
+		// NORMAL
+		vao_non_interleaved.set_attribute_array(
+			ctx, surf_shader.get_normal_index(),
+			vec3type, vb_norm,
+			0,
+			normals.size(),
+			sizeof(cgv::vec3)
+		);
 		
 
-		//  generate the fractal structure 
-		fractal.use_vertex_array(&vertex_array, vertices.size(), GL_TRIANGLES);
+		if (mode == BUILTIN)
+			fractal.use_vertex_array(nullptr, 0, GL_TRIANGLES);
+		else if (mode == INTERLEAVED)
+			fractal.use_vertex_array(&vertex_array, vertices.size(), GL_TRIANGLES);
+		else if (mode == NON_INTERLEAVED)
+			fractal.use_vertex_array(&vao_non_interleaved, vertices.size(), GL_TRIANGLES);
+
 
 		return success;
 	}
@@ -175,15 +236,12 @@ public:
 		cgv::render::shader_program& surf_shader = ctx.ref_surface_shader_program(false);
 		surf_shader.enable(ctx);
 		
-		// what does this color affect 
-		ctx.set_color(cgv::rgb(1.0f));
 
 		ctx.push_modelview_matrix();
 
 
-		//ctx.tesselate_unit_square();
-		draw_my_unit_cube(ctx);
-		fractal.draw_recursive(ctx, cgv::rgb(1.0f, 0.5f, 0.5f), 3, 0);
+		// draw_recursive already draws the first cube
+		fractal.draw_recursive(ctx, cgv::rgb(1.0f, 1.0f, 0.0f), 3, 0);
 		
 		
 
@@ -227,12 +285,6 @@ public:
 		}
 	}
 
-	void draw_my_unit_cube(cgv::render::context& ctx)
-	{
-		vertex_array.enable(ctx);
-		glDrawArrays(GL_TRIANGLES, 0, (GLsizei)vertices.size());
-		vertex_array.disable(ctx);
-	}
 
 // [END] Tasks 0.2a, 0.2b and 0.2c
 // ************************************************************************************/
