@@ -340,14 +340,6 @@ public:
 			sizeof(vertex) // stride from one element to next
 		) && success;
 
-		// for the colors in the shader
-		success = vertex_array.set_attribute_array(
-			ctx, surf_shader.get_color_index(), vec3type, vb,
-			2*sizeof(cgv::vec3), // colors follow after position
-			vertices.size(), // number of normal elements in the array
-			sizeof(vertex) // stride from one element to next
-		) && success;
-
 		positions.clear();
 		normals.clear();
 		for (auto& v : vertices) {
