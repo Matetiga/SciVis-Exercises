@@ -82,14 +82,18 @@ protected:
 	cubes_fractal fractal;
 
 
+	std::vector<vertex> all_vertices;
+	cgv::render::vertex_buffer vb_all;
+	cgv::render::attribute_array_binding vao_all;
 
+	bool rebuild_geometry;
 
 public:
 	cubes_drawable() :
 		cube_color_r(1.0f), cube_color_g(1.0f), cube_color_b(0.0f),
 		cube_color(cube_color_r, cube_color_g, cube_color_b),
 		recursion_level(3),
-		mode(BUILTIN)
+		mode(BUILTIN), rebuild_geometry(false)
 	{
 	}
 
@@ -136,12 +140,17 @@ public:
 			cube_color_b = cube_color.B();
 		}
 
+		if (member_ptr == &mode) {
+			rebuild_geometry = true;
+		}
+
 		if (mode == BUILTIN)
 			fractal.use_vertex_array(nullptr, 0, GL_TRIANGLES);
 		else if (mode == INTERLEAVED)
 			fractal.use_vertex_array(&vertex_array, vertices.size(), GL_TRIANGLES);
 		else if (mode == NON_INTERLEAVED)
 			fractal.use_vertex_array(&vao_non_interleaved, vertices.size(), GL_TRIANGLES);
+		
 
 		// make sure the GUI reflects new state in the case the write did not originate form GUI interaction
 		update_member(member_ptr);
@@ -150,6 +159,91 @@ public:
 			post_redraw();
 	}
 
+	void build_fractal_geometry(
+		const cgv::math::fmat<double, 4, 4>& transform,
+		int max_depth,
+		int level
+	)
+	{
+		auto T = transform * cgv::math::scale4<double>(0.5, 0.5, 0.5);
+
+		for (auto& v : vertices) {
+			vertex out;
+
+			cgv::vec3 p = v.pos;
+			out.pos = cgv::vec3(
+				T(0, 0) * p.x() + T(0, 1) * p.y() + T(0, 2) * p.z() + T(0, 3),
+				T(1, 0) * p.x() + T(1, 1) * p.y() + T(1, 2) * p.z() + T(1, 3),
+				T(2, 0) * p.x() + T(2, 1) * p.y() + T(2, 2) * p.z() + T(2, 3)
+			);
+
+			out.normal = v.normal;
+			out.normal.normalize();
+
+			all_vertices.push_back(out);
+		}
+
+		if (level >= max_depth)
+			return;
+
+		int num_children = (level == 0) ? 4 : 3;
+
+		for (int i = 0; i < num_children; i++) {
+			auto childT =
+				T *
+				cgv::math::rotate4<double>(i * 90 - 90, 0, 0, 1) *
+				cgv::math::translate4<double>(2, 0, 0);
+
+			build_fractal_geometry(childT, max_depth, level + 1);
+		}
+	}
+
+	void regenerate_geometry(cgv::render::context& ctx)
+	{
+		all_vertices.clear();
+
+		cgv::math::fmat<double, 4, 4> I;
+		I.identity();
+
+		// TODO: Set the recursion depth via config file after implementing Task 0.2a and 0.2b
+		build_fractal_geometry(I, 4, 0);
+
+		if (all_vertices.empty())
+			return;
+
+		auto vec3type =
+			cgv::render::element_descriptor_traits<cgv::vec3>
+			::get_type_descriptor(all_vertices[0].pos);
+
+		vb_all.destruct(ctx);
+		vao_all.destruct(ctx);
+
+		vb_all.create(ctx, &all_vertices[0], all_vertices.size());
+		vao_all.create(ctx);
+
+		auto& shader = ctx.ref_surface_shader_program(true);
+
+		vao_all.set_attribute_array(
+			ctx, shader.get_position_index(),
+			vec3type, vb_all,
+			0,
+			all_vertices.size(),
+			sizeof(vertex)
+		);
+
+		vao_all.set_attribute_array(
+			ctx, shader.get_normal_index(),
+			vec3type, vb_all,
+			sizeof(cgv::vec3),
+			all_vertices.size(),
+			sizeof(vertex)
+		);
+
+
+	}
+
+	// this was only necessary to for the screen resolution values in demo
+	// maybe remove ?
 	bool gui_check_value(cgv::gui::control<int>& ctrl)
 	{
 		if (ctrl.controls(&recursion_level))
@@ -253,6 +347,17 @@ public:
 			fractal.use_vertex_array(&vertex_array, vertices.size(), GL_TRIANGLES);
 		else if (mode == NON_INTERLEAVED)
 			fractal.use_vertex_array(&vao_non_interleaved, vertices.size(), GL_TRIANGLES);
+		else if (mode == SINGLE_VERTEX_BUFFER) {
+			regenerate_geometry(ctx);
+
+			cgv::media::illum::surface_material mat;
+			mat.diffuse_reflectance = cgv::rgb(1.0f, 0.5f, 0.5f);
+			ctx.set_material(mat);
+
+			vao_all.enable(ctx);
+			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)all_vertices.size());
+			vao_all.disable(ctx);
+		}
 
 
 		return success;
@@ -260,6 +365,8 @@ public:
 
 	void draw(cgv::render::context& ctx)
 	{
+
+		
 
 		// saving the current OpenGL state
 		// if glClearColor is used, the quad will also be affected
@@ -270,8 +377,23 @@ public:
 		cgv::render::shader_program& surf_shader = ctx.ref_surface_shader_program(false);
 		surf_shader.enable(ctx);
 
-		// draw_recursive already draws the first cube
-		fractal.draw_recursive(ctx, cgv::rgb(cube_color.R(), cube_color.G(), cube_color.B()), recursion_level, 0);
+		//ctx.tesselate_unit_square();
+		if (mode == SINGLE_VERTEX_BUFFER) {
+			if(rebuild_geometry)
+				regenerate_geometry(ctx);
+
+			cgv::media::illum::surface_material mat;
+			mat.diffuse_reflectance = cgv::rgb(1.0f, 0.5f, 0.5f);
+			ctx.set_material(mat);
+
+			vao_all.enable(ctx);
+			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)all_vertices.size());
+			vao_all.disable(ctx);
+		}
+		else {
+			draw_my_unit_cube(ctx);
+			fractal.draw_recursive(ctx, cgv::rgb(1.0f, 0.5f, 0.5f), 3, 0);
+		}
 		
 		ctx.pop_modelview_matrix();
 		surf_shader.disable(ctx);
