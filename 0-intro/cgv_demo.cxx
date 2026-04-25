@@ -75,7 +75,7 @@ protected:
 	//           object.
 
 	// < your code here >
-
+	bool use_vertex_array = false;
 	// [END] Task 0.1
 	//*********************************************************************************/
 
@@ -145,7 +145,8 @@ public:
 			rh.reflect_member("fb_bgcolor_g", fb_bgcolor_g) &&
 			rh.reflect_member("fb_bgcolor_b", fb_bgcolor_b) &&
 			rh.reflect_member("wireframe", wireframe) &&
-			rh.reflect_member("draw_backside", draw_backside);
+			rh.reflect_member("draw_backside", draw_backside) &&
+			rh.reflect_member("use_vertex_array", use_vertex_array);
 	}
 
 	// Part of the cgv::base::base interface, should be implemented to respond to write
@@ -336,7 +337,7 @@ public:
 		//           and the one built into the cgv::render::context.
 
 		// < Your code here >
-
+		add_member_control(this, "custom quad", use_vertex_array, "toggle");
 		// [END] Task 0.1
 		//*****************************************************************************/
 	}
@@ -507,6 +508,12 @@ public:
 		// Task 0.1: If enabled, render the quad with custom tesselation
 		//           instead of using tesselate_unit_square(). You can invoke
 		//           the method draw_my_unit_square() for this.
+			// Task 0.1: If enabled, render the quad with custom tesselation
+//           instead of using tesselate_unit_square(). You can invoke
+//           the method draw_my_unit_square() for this.
+		if (use_vertex_array)
+			draw_my_unit_square(ctx);
+		else
 			ctx.tesselate_unit_square();
 
 		//*********************************************************************/
@@ -519,8 +526,12 @@ public:
 		// Task 0.1: If enabled, render the quad with custom tesselation
 		//           instead of using tesselate_unit_square(). Again, you
 		//           can invoke the method draw_my_unit_square() for this.
-			if (draw_backside)
+		if (draw_backside) {
+			if (use_vertex_array)
+				draw_my_unit_square(ctx);
+			else
 				ctx.tesselate_unit_square();
+		}
 
 		//*****************************************************************/
 		glCullFace(previous_cull_face_mode);
