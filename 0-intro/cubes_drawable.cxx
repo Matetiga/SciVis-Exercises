@@ -205,8 +205,7 @@ public:
 		cgv::math::fmat<double, 4, 4> I;
 		I.identity();
 
-		// TODO: Set the recursion depth via config file after implementing Task 0.2a and 0.2b
-		build_fractal_geometry(I, 4, 0);
+		build_fractal_geometry(I, recursion_level, 0);
 
 		if (all_vertices.empty())
 			return;
@@ -242,8 +241,6 @@ public:
 
 	}
 
-	// this was only necessary to for the screen resolution values in demo
-	// maybe remove ?
 	bool gui_check_value(cgv::gui::control<int>& ctrl)
 	{
 		if (ctrl.controls(&recursion_level))
@@ -279,6 +276,7 @@ public:
 	}
 
 	// used for the cgv::render::drawable interface
+	// called somewhere within the framework 
 	bool init(cgv::render::context& ctx)
 	{
 		bool success = true;
@@ -351,7 +349,7 @@ public:
 			regenerate_geometry(ctx);
 
 			cgv::media::illum::surface_material mat;
-			mat.diffuse_reflectance = cgv::rgb(1.0f, 0.5f, 0.5f);
+			mat.diffuse_reflectance = cube_color;
 			ctx.set_material(mat);
 
 			vao_all.enable(ctx);
@@ -362,6 +360,7 @@ public:
 
 		return success;
 	}
+
 
 	void draw(cgv::render::context& ctx)
 	{
@@ -383,7 +382,7 @@ public:
 				regenerate_geometry(ctx);
 
 			cgv::media::illum::surface_material mat;
-			mat.diffuse_reflectance = cgv::rgb(1.0f, 0.5f, 0.5f);
+			mat.diffuse_reflectance = cube_color;
 			ctx.set_material(mat);
 
 			vao_all.enable(ctx);
@@ -391,8 +390,8 @@ public:
 			vao_all.disable(ctx);
 		}
 		else {
-			draw_my_unit_cube(ctx);
-			fractal.draw_recursive(ctx, cgv::rgb(1.0f, 0.5f, 0.5f), 3, 0);
+			// draw_my_unit_cube(ctx);
+			fractal.draw_recursive(ctx, cube_color, recursion_level, 0);
 		}
 		
 		ctx.pop_modelview_matrix();
