@@ -66,6 +66,7 @@ protected:
 	struct vertex {
 		cgv::vec3 pos;
 		cgv::vec3 normal;
+		cgv::vec4 color;
 	};
 	
 	std::vector<vertex> vertices;
@@ -129,6 +130,7 @@ public:
 			cube_color.R() = cube_color_r;
 			cube_color.G() = cube_color_g;
 			cube_color.B() = cube_color_b;
+			rebuild_geometry = true; 
 			update_member(&cube_color);
 		}
 
@@ -138,6 +140,7 @@ public:
 			cube_color_r = cube_color.R();
 			cube_color_g = cube_color.G();
 			cube_color_b = cube_color.B();
+			rebuild_geometry = true;
 		}
 
 		if (member_ptr == &mode) {
@@ -157,6 +160,18 @@ public:
 
 		if (this->is_visible())
 			post_redraw();
+	}
+
+	cgv::vec4 compute_color(int level) {
+		float t = level / float(recursion_level);
+		// Use the RGB values from the GUI (cube_color_r, etc.) 
+		// and perhaps just dim them based on the recursion level
+		return cgv::vec4(
+			cube_color_r * (1.0f - t * 0.5f),
+			cube_color_g * (1.0f - t * 0.5f),
+			cube_color_b * (1.0f - t * 0.5f),
+			1.0f
+		);
 	}
 
 	void build_fractal_geometry(
@@ -179,6 +194,10 @@ public:
 
 			out.normal = v.normal;
 			out.normal.normalize();
+
+			cgv::vec4 col = compute_color(level);
+
+			out.color = col;
 
 			all_vertices.push_back(out);
 		}
@@ -214,6 +233,10 @@ public:
 			cgv::render::element_descriptor_traits<cgv::vec3>
 			::get_type_descriptor(all_vertices[0].pos);
 
+		auto vec4type =
+			cgv::render::element_descriptor_traits<cgv::vec4>
+			::get_type_descriptor(all_vertices[0].color);
+
 		vb_all.destruct(ctx);
 		vao_all.destruct(ctx);
 
@@ -238,6 +261,15 @@ public:
 			sizeof(vertex)
 		);
 
+		vao_all.set_attribute_array(
+			ctx,
+			shader.get_color_index(),
+			vec4type,
+			vb_all,
+			2 * sizeof(cgv::vec3),      // offset after pos + normal
+			all_vertices.size(),
+			sizeof(vertex)
+		);
 
 	}
 
@@ -280,7 +312,7 @@ public:
 	bool init(cgv::render::context& ctx)
 	{
 		bool success = true;
-		cgv::render::shader_program& surf_shader = ctx.ref_surface_shader_program(false);
+		cgv::render::shader_program& surf_shader = ctx.ref_surface_shader_program(true);
 
 		init_cube();
 		fractal = cubes_fractal();
@@ -304,6 +336,14 @@ public:
 		success = vertex_array.set_attribute_array(
 			ctx, surf_shader.get_normal_index(), vec3type, vb,
 			sizeof(cgv::vec3), // normals follow after position
+			vertices.size(), // number of normal elements in the array
+			sizeof(vertex) // stride from one element to next
+		) && success;
+
+		// for the colors in the shader
+		success = vertex_array.set_attribute_array(
+			ctx, surf_shader.get_color_index(), vec3type, vb,
+			2*sizeof(cgv::vec3), // colors follow after position
 			vertices.size(), // number of normal elements in the array
 			sizeof(vertex) // stride from one element to next
 		) && success;
@@ -348,13 +388,6 @@ public:
 		else if (mode == SINGLE_VERTEX_BUFFER) {
 			regenerate_geometry(ctx);
 
-			cgv::media::illum::surface_material mat;
-			mat.diffuse_reflectance = cube_color;
-			ctx.set_material(mat);
-
-			vao_all.enable(ctx);
-			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)all_vertices.size());
-			vao_all.disable(ctx);
 		}
 
 
@@ -373,13 +406,16 @@ public:
 
 		ctx.push_modelview_matrix();
 
-		cgv::render::shader_program& surf_shader = ctx.ref_surface_shader_program(false);
+		cgv::render::shader_program& surf_shader = ctx.ref_surface_shader_program(true);
 		surf_shader.enable(ctx);
 
 		//ctx.tesselate_unit_square();
 		if (mode == SINGLE_VERTEX_BUFFER) {
 			if(rebuild_geometry)
+			{
 				regenerate_geometry(ctx);
+				rebuild_geometry = false;
+			}
 
 			cgv::media::illum::surface_material mat;
 			mat.diffuse_reflectance = cube_color;
@@ -405,7 +441,7 @@ public:
 
 		// struct for the faces of the cube
 		struct Face { int v0, v1, v2, v3; cgv::vec3 normal; };
-		float s = 0.5;
+		float s = 1;
 		cgv::vec3 points[8] = {
 			{-s, -s, -s}, {s, -s, -s}, {s, s, -s}, {-s, s, -s}, // back face
 			{-s, -s,  s}, {s, -s,  s}, {s, s,  s}, {-s, s,  s}  // front face
