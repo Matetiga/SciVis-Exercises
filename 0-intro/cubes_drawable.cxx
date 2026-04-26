@@ -81,6 +81,7 @@ protected:
 
 	// for the fractal structure
 	cubes_fractal fractal;
+	cgv::media::illum::surface_material cube_material;
 
 
 	std::vector<vertex> all_vertices;
@@ -96,6 +97,10 @@ public:
 		recursion_level(3),
 		mode(BUILTIN), rebuild_geometry(false)
 	{
+		// initializing the material for the 0.3a implementation
+		cube_material.brdf_type = (cgv::media::illum::BrdfType)(cgv::media::illum::BT_LAMBERTIAN | cgv::media::illum::BT_PHONG);
+		cube_material.specular_reflectance = {.0625f, .0625f, .0625f};
+		cube_material.roughness = .03125f;
 	}
 
 	// what does this make? --> it names the plugin (top left corner of the app window)
@@ -163,7 +168,9 @@ public:
 	}
 
 	cgv::vec4 compute_color(int level) {
-		float t = level / float(recursion_level);
+		// otherwise there could have beeen division by 0
+		float t = recursion_level == 0 ? 0 : level / float(recursion_level);
+
 		// Use the RGB values from the GUI (cube_color_r, etc.) 
 		// and perhaps just dim them based on the recursion level
 		return cgv::vec4(
@@ -174,6 +181,23 @@ public:
 		);
 	}
 
+	// This is the implementation for 0.3.1 
+	// which is only active, when in the gui 'SINGLE_VERTEX_BUFFER' mode is selected
+	// ------------------------------------------
+	// Performance Comparison: 
+	// while testing the performance between using the methods in cubes_fractal.cxx and our implementation 
+	// we notice that not having the overhead of the many draw calls significantly improves the efficiency 
+	// the following analysis focuses on the different storage modes and instantly going from recursion level 3 to 8 
+	// Only 'SINGLE_VERTEX_BUFFER' uses our implementation to reduce the overhead
+	// BUILTIN : the overhead caused round 12% of the CPU (% of all processors) to be used and this lasted 1.6 seconds
+	// INTERLEAVED : around 11% of CPU and for 1.1s
+	// NON_INTERLEAVED : around 12% of CPU and ran for 1.0s
+	// SINGLE_VERTEX_BUFFER : around 3% of CPU and ran for 0.33s 
+	// Even though our implementation does not change the color of each level of recursion
+	// the CPU's performance improvement is very noticeable
+	// This values were taken from the 'Diagnostics Tool' of VisualStudio
+	// -----------------------------------------
+
 	void build_fractal_geometry(
 		const cgv::math::fmat<double, 4, 4>& transform,
 		int max_depth,
@@ -181,6 +205,7 @@ public:
 	)
 	{
 		auto T = transform * cgv::math::scale4<double>(0.5, 0.5, 0.5);
+		cgv::vec4 col = compute_color(level);
 
 		for (auto& v : vertices) {
 			vertex out;
@@ -194,8 +219,6 @@ public:
 
 			out.normal = v.normal;
 			out.normal.normalize();
-
-			cgv::vec4 col = compute_color(level);
 
 			out.color = col;
 
@@ -289,6 +312,8 @@ public:
 	// this is called when the user changes a value in the GUI, after the value has been validated by gui_check_value
 	void gui_value_changed(cgv::gui::control<int>& ctrl)
 	{
+		// otherwise changing the gui won't reload the geometry with the new values (only for 'SINGLE_VERTEX_BUFFER' mode)
+		rebuild_geometry = true;
 		post_redraw();
 	}
 
@@ -409,16 +434,15 @@ public:
 				rebuild_geometry = false;
 			}
 
-			cgv::media::illum::surface_material mat;
-			mat.diffuse_reflectance = cube_color;
-			ctx.set_material(mat);
+			//cgv::media::illum::surface_material mat;
+			cube_material.diffuse_reflectance = cube_color;
+			ctx.set_material(cube_material); 
 
 			vao_all.enable(ctx);
 			glDrawArrays(GL_TRIANGLES, 0, (GLsizei)all_vertices.size());
 			vao_all.disable(ctx);
 		}
 		else {
-			// draw_my_unit_cube(ctx);
 			fractal.draw_recursive(ctx, cube_color, recursion_level, 0);
 		}
 		
