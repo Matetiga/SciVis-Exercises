@@ -14,3 +14,7 @@ type(cgv_demo):draw_backside=true
 type(cgv_demo):use_vertex_array=true
 
 /// Task 0.2: Set appropriate values for your drawable that renders the cube fractal.
+// for the color of the central cube
+type(cubes_drawable):cube_color_r=1.0
+type(cubes_drawable):cube_color_g=1.0
+type(cubes_drawable):cube_color_b=0.0

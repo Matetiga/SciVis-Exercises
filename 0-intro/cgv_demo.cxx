@@ -437,10 +437,7 @@ public:
 		// offscreen use.
 		// Also, we're adjusting the framework-managed viewport to be in line with the
 		// offscreen framebuffer dimensions, so save the current viewport as well.
-		GLfloat previous_clear_color[4];
-		GLint previous_viewport[4];
-		glGetFloatv(GL_COLOR_CLEAR_VALUE, previous_clear_color);
-		glGetIntegerv(GL_VIEWPORT, previous_viewport);
+		glPushAttrib(GL_COLOR_BUFFER_BIT | GL_VIEWPORT_BIT | GL_POLYGON_BIT);
 		// Clear the offscreen color buffer with the desired background color
 		glClearColor(bgcolor.R(), bgcolor.G(), bgcolor.B(), bgcolor.alpha());
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -456,14 +453,7 @@ public:
 		ctx.output_stream() << text;
 		ctx.output_stream().flush();
 		ctx.ref_default_shader_program().disable(ctx);
-		glClearColor(
-			previous_clear_color[0], previous_clear_color[1],
-			previous_clear_color[2], previous_clear_color[3]
-		);
-		glViewport(
-			previous_viewport[0], previous_viewport[1],
-			previous_viewport[2], previous_viewport[3]
-		);
+		glPopAttrib();
 		fb.disable(ctx);
 
 
@@ -471,10 +461,7 @@ public:
 		// Draw the contents of this node.
 
 		// Observe wireframe mode
-		GLint previous_polygon_mode[2];
-		GLint previous_cull_face_mode;
-		glGetIntegerv(GL_POLYGON_MODE, previous_polygon_mode);
-		glGetIntegerv(GL_CULL_FACE_MODE, &previous_cull_face_mode);
+		glPushAttrib(GL_POLYGON_BIT);
 		if (wireframe)
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
@@ -534,8 +521,7 @@ public:
 		}
 
 		//*****************************************************************/
-		glCullFace(previous_cull_face_mode);
-		glPolygonMode(GL_FRONT_AND_BACK, previous_polygon_mode[0]);
+		glPopAttrib();
 		ctx.pop_modelview_matrix();
 
 		// Disable shader program and texture
@@ -567,6 +553,7 @@ public:
 	}
 };
 
+// IMPORTANT : currently disabled. Otherwise it would cause conflicts with cubes_drawable plugin
 // Create an instance of the demo class at plugin load and register it with the framework
 cgv::base::object_registration<cgv_demo> cgv_demo_registration(
 	"cgv_demo" // <-- some arbitrary registration event tag that can be useful for advanced debugging
