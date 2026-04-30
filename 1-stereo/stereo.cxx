@@ -673,7 +673,6 @@ public:
             double right = top * aspect;
             double left = -right;
 
-            // This is the frustum shift - makes parallax_zero_depth work
             double shift = eye * 0.5 * eye_separation * screen_width * ((double)z_near / parallax_zero_depth);
             left -= shift;
             right -= shift;
