@@ -21,6 +21,7 @@
 #include <cgv/gui/provider.h>
 #include <cgv/gui/event_handler.h>
 #include <cgv/gui/key_event.h>
+#include <cgv/math/fmat.h>
 #include <random>
 
 using namespace cgv::render;
@@ -660,7 +661,44 @@ public:
                   matriices for cyclopic lighting.
                   Use the variable 'cyclopic_lighting' to make it switch between both lightings */
 
-             /*<your_code_here>*/
+            // get the model view matrix according to the above comments
+            cgv::math::fmat<float,4,4> mvm = ctx.get_modelview_matrix();
+            // same for the projection matrix
+            cgv::math::fmat<float, 4, 4> proj = ctx.get_projection_matrix();
+
+            // new projection matrix calculation
+            // basically we set the new frustum
+            double top = z_near * tan(fovy * M_PI / 360.0);
+            double bottom = -top;
+            double right = top * aspect;
+            double left = -right;
+
+            double shift = eye * 0.5 * eye_separation * screen_width * ((double)z_near / parallax_zero_depth);
+            left -= shift;
+            right -= shift;
+
+            cgv::math::fmat<float, 4, 4> P_new = cgv::math::frustum4<float>(
+                (float)left, (float)right,
+                (float)bottom, (float)top,
+                (float)z_near, (float)z_far
+            );
+            ctx.set_projection_matrix(P_new);
+
+            // each eye is in a little different position
+            // so we calculate the offset to factor for that.
+            float eye_offset = eye * 0.5f * eye_separation * screen_width;
+
+            cgv::mat4 eye_shift = translate4<float>(cgv::vec3(-eye_offset, 0.0f, 0.0f));
+            // set the new model view matrix
+            ctx.set_modelview_matrix(mvm * eye_shift);
+
+            if (cyclopic_lighting) {
+                ctx.ref_surface_shader_program(true).set_uniform(
+                    ctx, "modelview_matrix", mvm
+                );
+            }
+           
+
 
             /***********************************************************************************/
 
