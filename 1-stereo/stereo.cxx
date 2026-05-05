@@ -673,7 +673,11 @@ public:
             double right = top * aspect;
             double left = -right;
 
-            double shift = eye * 0.5 * eye_separation * screen_width * ((double)z_near / parallax_zero_depth);
+            float eye_offset = eye * 0.5f * eye_separation * screen_width;
+            
+
+            double shift = eye_offset * (z_near / parallax_zero_depth);
+
             left -= shift;
             right -= shift;
 
@@ -686,16 +690,21 @@ public:
 
             // each eye is in a little different position
             // so we calculate the offset to factor for that.
-            float eye_offset = eye * 0.5f * eye_separation * screen_width;
 
             cgv::mat4 eye_shift = translate4<float>(cgv::vec3(-eye_offset, 0.0f, 0.0f));
             // set the new model view matrix
-            ctx.set_modelview_matrix(mvm * eye_shift);
-
+            // need to do eye_shift*mvm
+            // if we do mvm*eye_shift then eye_shift goes into object coordinates space and that is not good
+            // gives wrong results
+            ctx.set_modelview_matrix(eye_shift*mvm);
+            
             if (cyclopic_lighting) {
-                ctx.ref_surface_shader_program(true).set_uniform(
-                    ctx, "modelview_matrix", mvm
-                );
+                // for cyclopic lighting we need to set the same modelview and projection matrix for both eyes
+				// so we set it for the first eye and then reuse it for the second eye
+				if (i == 0) {
+					ctx.set_projection_matrix(proj);
+					ctx.set_modelview_matrix(mvm);
+				}
             }
            
 
