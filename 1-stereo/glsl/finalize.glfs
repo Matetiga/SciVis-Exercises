@@ -154,8 +154,10 @@ void main()
              tasks 1.2.a:  true anaglyph
                   combine the color channels of each view in such a way that result in true anaglyph.
                   You can utilize the 'Y' variable for this. */
-
-             /*<your_code_here>*/
+                  {  float l = dot(c_0, Y); // left eye 
+                    float r = dot(c_1, Y); // right eye 
+                    frag_color = vec4(l, 0, r, 1.0);}
+             
 
             /***********************************************************************************/
             break;
@@ -164,8 +166,10 @@ void main()
              tasks 1.2.a:  gray anaglyph
                   combine the color channels of each view in such a way that result in true anaglyph.
                   You can utilize the 'Y' variable for this. */
-
-             /*<your_code_here>*/
+                   { float l = dot(c_0, Y);
+                    float r = dot(c_1, Y);
+                    frag_color = vec4(l, r, r, 1.0);}
+            
 
             /***********************************************************************************/
             break;
@@ -177,8 +181,9 @@ void main()
              tasks 1.2.a:  half color anaglyph
                   combine the color channels of each view in such a way that result in true anaglyph.
                   You can utilize the 'Y' variable for this. */
-
-             /*<your_code_here>*/
+                    {float l = dot(c_0, Y);
+                    frag_color = vec4(l, c_1.g, c_1.b, 1.0);}
+        
 
             /***********************************************************************************/
             break;
