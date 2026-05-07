@@ -21,6 +21,7 @@
 #include <cgv/gui/provider.h>
 #include <cgv/gui/event_handler.h>
 #include <cgv/gui/key_event.h>
+#include <cgv/math/fmat.h>
 #include <random>
 
 using namespace cgv::render;
@@ -660,12 +661,64 @@ public:
                   matriices for cyclopic lighting.
                   Use the variable 'cyclopic_lighting' to make it switch between both lightings */
 
-             /*<your_code_here>*/
+            // get the model view matrix according to the above comments
+            cgv::math::fmat<float,4,4> mvm = ctx.get_modelview_matrix();
+            // same for the projection matrix
+            cgv::math::fmat<float, 4, 4> proj = ctx.get_projection_matrix();
+
+            // new projection matrix calculation
+            // basically we set the new frustum
+            double top = z_near * tan(fovy * M_PI / 360.0);
+            double bottom = -top;
+            double right = top * aspect;
+            double left = -right;
+
+            // eye seperation is the total distance b/w the 2 eyes
+            // when we do 0.5 we get the eye offset from center
+            float eye_offset = eye * 0.5f * eye_separation * screen_width;
+            
+
+            double shift = eye_offset * (z_near / parallax_zero_depth);
+            // accounting for the shifts of both eyes
+            left -= shift;
+            right -= shift;
+            // frustum calculation
+            cgv::math::fmat<float, 4, 4> P_new = cgv::math::frustum4<float>(
+                (float)left, (float)right,
+                (float)bottom, (float)top,
+                (float)z_near, (float)z_far
+            );
+            // setting the new projection matrix according to the commets
+            
+
+            // each eye is in a little different position
+            // so we calculate the offset to factor for that.
+
+            cgv::mat4 eye_shift = translate4<float>(cgv::vec3(-eye_offset, 0.0f, 0.0f));
+            
+            if (cyclopic_lighting) {
+                // for cyclopic lighting we 
+                // final MVP matrix = (P_new * eye_shift) * mvm
+                // P_new is the projection matrix for current eye
+                // eye_shift is the translation to shift the eye to the correct position
+                // mvm is the model view matrix for the center eye
+                // basically apply the eye shift to the projection matrix for cyclopic lighting
+                ctx.set_projection_matrix(P_new*eye_shift);
+                ctx.set_modelview_matrix(mvm);
+            }
+            else {
+                // for normal lighting
+                // it becomes final MVP matrix = P_new * (eye_shift * mvm)
+                // basically apply the eye shift to the model view matrix for normal light
+                ctx.set_projection_matrix(P_new);
+                ctx.set_modelview_matrix(eye_shift * mvm);
+            }
 
             /***********************************************************************************/
 
             // store per eye modelview projection matrix to hand over to finalization pass
             MVP[i] = ctx.get_projection_matrix() * ctx.get_modelview_matrix();
+            
 
             // render scene
             render_scene(ctx);
