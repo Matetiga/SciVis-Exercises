@@ -199,7 +199,23 @@ void main()
          tasks 1.4.b:  random dot autostereogram
               You can utilize the random texture (rnd_tex) which was already created for this */
 
-         /*<your_code_here>*/
+         // we just need one depth map for we just render a single image
+         // we just average out the depth from the both eyes
+         float depth=(d_0+d_1)*0.5;
+
+         // create disparity based on depth
+         // basically the main cue for the HVS for infering depth
+
+         float disparity=(1.0-depth)*parallax_scale*0.03;
+
+         // width between the repeating patterns
+         float pattern_width = 0.08;
+
+         vec2 uv=texcrd;
+         // horizontally repeating patterns
+         // coz autostereograms are horizontally repeating patterns
+         uv.x=mod(uv.x+disparity, pattern_width)/pattern_width;
+         frag_color = texture(rnd_tex, uv);
 
         /***********************************************************************************/
         break;
