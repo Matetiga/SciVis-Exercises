@@ -104,12 +104,29 @@ bool check_visibility(in float d, in vec3 size, in mat4 T, in sampler2D other_de
           Then compare d_remapped to the current depth (d). For this use the remap_epsilon variable
           to make the comparison a bit more flexible. */
 
-     /*<your_code_here>*/
+    // why is depth the first component of texture(...)?
+    // IMPORTANT : depth is stored in the red component, so access it with .x
+     float d0 = texture(other_dep_tex, p_texcrd_in_other_image).x; // this is what the right camera can see
+     // so we are comparing a remapped value (hypothesis) to the actual value on the camera
+
+    // d_remapped and c_remapped are hard coded values 
+     float d1 = p_window_r.z; // This will be the depth of the remapped pixel onto the other view (right)
+
+     // remap_epsilon is used as a flexibility factor 
+     if (d1 > d0 + remap_epsilon){ // this is the case mentioned in Vorlesung ----> Pixel not visible
+        c_remapped = vec4(0.0, 1.0, 0.0, 1.0); // make it more green like in the example 
+        return false;
+     } else 
+     {
+        d_remapped = d1;
+        c_remapped = texture(other_col_tex, p_texcrd_in_other_image);
+     }
 
     /************************************************************************************/
 
     return true;
 }
+
 
 void main()
 {
@@ -163,7 +180,30 @@ void main()
               suitable transfer function to display the values. You can also integrate the slider
               parallax_scale to adjust the transfer function from the UI. */
 
-         /*<your_code_here>*/
+         // image_idx is used for selecting the side
+         // Vorlesung : v is always 0 for horizontal paralax
+         float d = image_idx == 0 ? d_0 : d_1; 
+         if(d > 1.0 - z_far_epsilon){
+			frag_color = vec4(0.0, 0.0, 0.5, 1.0); // paint background in blue
+            break;
+         }
+
+         if(image_idx ==0){ // == 0 is the left side
+            float parallax_value =  (p_0_texcrd_in_right_image - texcrd).x * parallax_scale;
+
+			float blue_value = 1 - smoothstep(0.0, 0.25, parallax_value);
+			float red_value = smoothstep(-0.25, 0.0, parallax_value);
+			frag_color = vec4(red_value, blue_value, blue_value, 1.0);
+
+         } else{
+            float parallax_value =  (texcrd - p_1_texcrd_in_left_image).x * parallax_scale;
+
+			float blue_value = 1 - smoothstep(0.0, 0.25, parallax_value);
+			float red_value = smoothstep(-0.25, 0.0, parallax_value);
+			frag_color = vec4(red_value, blue_value, blue_value, 1.0);
+
+         }
+         
 
         /***********************************************************************************/
         break;
