@@ -51,14 +51,35 @@ vec3 remap_window_coords(in vec3 window, in vec3 size, in mat4 T, out vec2 t)
           mat4 T      - transformation matrix from window coordinates of left/right view to clip
                         coordinates of rigth/left view*/
 
-     vec3 mapped_coord = window;
-     /*<your_code_here>*/
-     return mapped_coord;
+    
+    // in order to remap a pixel on the left side to the right side
+    // we need to take its 2D value and transform it to 3D
+    // the window coordinates in the Vorlesung reffer to the pixel coordinates
+    // important to divide by size in order to get the normalized value
+    // vec3 p0_window = vec3(gl_FragCoord.xy, texture(dep_tex_0, texcrd)); This is already passed with the parameter window
+    vec3 p_NDC = 2 * (window / size) -1;
+
+    // Transport p to 3D coordinates (world coord) and then to right eye coord
+    // because T is MVP_r and iMVP_l , we can directly use it to transform the NDC coordinates to world coordinates
+    vec4 p_clip= T * vec4(p_NDC, 1.0); 
+
+    vec3 p_wClip = p_clip.xyz / p_clip.w;
+
+    // because NDC coordinates go from -1 to 1, we need to transform them to the range of 0 to 1 for texture sampling 
+    // t is the out parameter
+    t = 0.5 * (p_wClip.xy + vec2(1.0));
+    
+
+    // important to resize the scale with size.xy, otherwise only between 0 and 1
+    vec3 mapped_coord = vec3(t * size.xy, 0.5 * (p_wClip.z + 1.0));
+    return mapped_coord;
 
     /************************************************************************************/
 }
 
 bool check_visibility(in float d, in vec3 size, in mat4 T, in sampler2D other_dep_tex, in sampler2D other_col_tex,
+// in order to remap a pixel on the left side to the right side
+// we need to take its 2D value and transform it to 3D
                       out vec2 p_texcrd_in_other_image, inout float d_remapped, inout vec4 c_remapped)
 {
     // first check whether p_0 is before far clipping plane
@@ -83,12 +104,29 @@ bool check_visibility(in float d, in vec3 size, in mat4 T, in sampler2D other_de
           Then compare d_remapped to the current depth (d). For this use the remap_epsilon variable
           to make the comparison a bit more flexible. */
 
-     /*<your_code_here>*/
+    // why is depth the first component of texture(...)?
+    // IMPORTANT : depth is stored in the red component, so access it with .x
+     float d0 = texture(other_dep_tex, p_texcrd_in_other_image).x; // this is what the right camera can see
+     // so we are comparing a remapped value (hypothesis) to the actual value on the camera
+
+    // d_remapped and c_remapped are hard coded values 
+     float d1 = p_window_r.z; // This will be the depth of the remapped pixel onto the other view (right)
+
+     // remap_epsilon is used as a flexibility factor 
+     if (d1 > d0 + remap_epsilon){ // this is the case mentioned in Vorlesung ----> Pixel not visible
+        c_remapped = vec4(0.0, 1.0, 0.0, 1.0); // make it more green like in the example 
+        return false;
+     } else 
+     {
+        d_remapped = d1;
+        c_remapped = texture(other_col_tex, p_texcrd_in_other_image);
+     }
 
     /************************************************************************************/
 
     return true;
 }
+
 
 void main()
 {
@@ -142,7 +180,30 @@ void main()
               suitable transfer function to display the values. You can also integrate the slider
               parallax_scale to adjust the transfer function from the UI. */
 
-         /*<your_code_here>*/
+         // image_idx is used for selecting the side
+         // Vorlesung : v is always 0 for horizontal paralax
+         float d = image_idx == 0 ? d_0 : d_1; 
+         if(d > 1.0 - z_far_epsilon){
+			frag_color = vec4(0.0, 0.0, 0.5, 1.0); // paint background in blue
+            break;
+         }
+
+         if(image_idx ==0){ // == 0 is the left side
+            float parallax_value =  (p_0_texcrd_in_right_image - texcrd).x * parallax_scale;
+
+			float blue_value = 1 - smoothstep(0.0, 0.25, parallax_value);
+			float red_value = smoothstep(-0.25, 0.0, parallax_value);
+			frag_color = vec4(red_value, blue_value, blue_value, 1.0);
+
+         } else{
+            float parallax_value =  (texcrd - p_1_texcrd_in_left_image).x * parallax_scale;
+
+			float blue_value = 1 - smoothstep(0.0, 0.25, parallax_value);
+			float red_value = smoothstep(-0.25, 0.0, parallax_value);
+			frag_color = vec4(red_value, blue_value, blue_value, 1.0);
+
+         }
+         
 
         /***********************************************************************************/
         break;
