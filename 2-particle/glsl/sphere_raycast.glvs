@@ -12,6 +12,7 @@ struct sphere_parameter_space
 
 uniform float radius;
 
+
 in vec4  position;
 in vec4  color;
 
@@ -56,7 +57,31 @@ void main()
                  hints: The eye point in world coordinates is implicitly given by the inverse
                  of the model view matrix MV.*/
 
-     /*<your_code_here>*/
+     mat4 iMV = inverse(MV);
+
+     vec3 p = position.xyz;
+     vec3 eye = vec3(iMV[3]);
+
+     vec3 eyeVec = eye - p;
+     float eLen = length(eyeVec);
+
+     sps.e_tilde = eyeVec/radius;
+     sps.m_tilde = ((radius*radius)/(eLen*eLen))*sps.e_tilde;
+
+     float rho = sqrt(1.0 - (radius*radius)/(eLen*eLen));
+
+     vec3 viewDir = normalize(sps.e_tilde);
+
+     vec3 up = vec3(0.0, 1.0, 0.0);
+     if(abs(dot(viewDir, up)) > 0.99)
+        up = vec3(1.0, 0.0, 0.0);
+
+     vec3 x_hat = normalize(cross(up, viewDir));
+     vec3 y_hat = normalize(cross(viewDir, x_hat));
+
+     sps.x_tilde = rho * x_hat;
+     sps.y_tilde = rho * y_hat;
+
 
     /************************************************************************************/
 

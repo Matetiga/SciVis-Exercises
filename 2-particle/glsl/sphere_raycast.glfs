@@ -16,6 +16,7 @@ in sphere_quad_info quad;
 in vec4 color_fs;
 
 
+
 //***** begin interface of surface.glsl ***********************************
 vec4 compute_reflected_appearance(vec3 position_eye, vec3 normal_eye, vec4 color, int side);
 //***** end interface of surface.glsl ***********************************
@@ -32,7 +33,8 @@ bool compute_ray_sphere_intersection(out vec3 x_eye, out vec3 n_eye)
      tasks 2.1b:  Determine if the ray intersects with the sphere. If not return false.
                   Use q_tilde for an easy intersection test based on texture coordinates.*/
 
-     /*<your_code_here>*/
+     if(dot(quad.q_tilde, quad.q_tilde) > 1.0f)
+		 return false;
 
     /************************************************************************************/
 
