@@ -18,6 +18,10 @@ struct sphere_quad_info
     vec2 q_tilde;   // texture coordinate
     vec3 v_eye;     // corner in eye coordinates
      /*<your_variables_here - also add in sphere_raycast.glfs>*/
+     vec3 c_eye;
+    float r;
+    float dc;
+    mat4 projection_matrix;
 };
 
 
@@ -61,10 +65,14 @@ void generate_quad_vertex(in vec4 sphere, in vec2 t, in sphere_parameter_space s
 
      vec3 v_tilde = sps.m_tilde + t.x * sps.x_tilde + t.y * sps.y_tilde; 
 
-     vec3 world_pos = sphere.xyz + sphere.w + v_tilde;
+     vec3 world_pos = sphere.xyz + sphere.w * v_tilde;
 
      vec4 v_eye4 = MV * vec4(world_pos, 1.0);
      quad.v_eye = v_eye4.xyz;
+
+     quad.c_eye = (MV * vec4(sphere.xyz, 1.0)).xyz;
+     quad.r = sphere.w;
+     quad.projection_matrix = MVP * inverse(MV);
 
      gl_Position = MVP * vec4(world_pos, 1.0);
 

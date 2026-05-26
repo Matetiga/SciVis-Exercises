@@ -9,6 +9,10 @@ struct sphere_quad_info
     vec2 q_tilde;   // texture coordinate
     vec3 v_eye;     // ray vector in eye coordinates
      /*<your_variables_here - exactly as in sphere_quad_info of sphere_raycast.glgs>*/
+    vec3 c_eye;
+    float r;
+    float dc;
+    mat4 projection_matrix;
 };
 
 in sphere_quad_info quad;
@@ -42,7 +46,11 @@ bool compute_ray_sphere_intersection(out vec3 x_eye, out vec3 n_eye)
      tasks 2.1c:  Compute the position (x_eye) and the normal (n_eye) of the intersection
                   point in eye coordinates.*/
 
-     /*<your_code_here>*/
+     float qz = sqrt(1.0 - dot(quad.q_tilde, quad.q_tilde));
+     vec3 offset = quad.r * vec3(quad.q_tilde, qz);
+     x_eye = quad.c_eye + offset;
+
+     n_eye = normalize(offset);
 
     /************************************************************************************/
 
@@ -50,7 +58,9 @@ bool compute_ray_sphere_intersection(out vec3 x_eye, out vec3 n_eye)
      tasks 2.1d:  Update gl_FragDepth with the corrected depth value for the intersection
                   point.*/
 
-     /*<your_code_here>*/
+    vec4 clip = quad.projection_matrix * vec4(x_eye, 1.0);
+    float ndc_depth = clip.z / clip.w;
+    gl_FragDepth = 0.5 * ndc_depth + 0.5;
 
     /************************************************************************************/
 
