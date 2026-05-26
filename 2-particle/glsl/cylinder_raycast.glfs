@@ -29,7 +29,33 @@ bool compute_cylinder_intersection(in vec3 e_ucyl, in vec3 v_ucyl, out float lam
 				    (x_ucyl=+-1 or y_ucyl=+-1) comparison is with respect to 1-epsilon (lambda > 0.999) to
 					avoid numerical problems. */
 
-	 /*<your_code_here>*/
+	vec2 e = e_ucyl.xy; //xy eye position
+    vec2 v = v_ucyl.xy; //xy ray direction i
+
+    float ev = dot(e, v);       
+    float vv = dot(v, v);      
+    float ee = dot(e, e);      
+
+    float discriminant = ev * ev - vv * (ee - 1.0);
+
+    if (discriminant < 0.0)
+        return false;
+
+    float sqrt_disc = sqrt(discriminant);
+    float lambda_plus  = (-ev + sqrt_disc) / vv;
+    float lambda_minus = (-ev - sqrt_disc) / vv;
+
+   
+    //  1.0 is not used to avoid numerical issues
+    if (lambda_minus > 0.999) {
+        lambda = lambda_minus;
+        return true;
+    }
+    if (lambda_plus > 0.999) {
+        lambda = lambda_plus;
+        return true;
+    }
+
 
 	/************************************************************************************/
 
@@ -56,7 +82,22 @@ void main()
 						Otherwise set lambda to true. Set the normal (n_ucyl) to vec3(0.0, 0.0, -+1.0)
 						depending on the side. */
 
-		 /*<your_code_here>*/
+							
+					float epsilon = 0.001;
+					if (position_ucyl.z < epsilon) {
+						
+						n_ucyl = vec3(0.0, 0.0, -1.0);
+						need_lambda = false;
+					}
+					else if (position_ucyl.z > 1.0 - epsilon) {
+						
+						n_ucyl = vec3(0.0, 0.0, 1.0);
+						need_lambda = false;
+					}
+					else {
+						
+						need_lambda = true;
+					}
 
 		/************************************************************************************/
 	}
@@ -88,7 +129,9 @@ void main()
 	 tasks 2.2c:  Update gl_FragDepth with the corrected depth value for the intersection
 					point. */
 
-	 /*<your_code_here>*/
+	vec4 p_clip = get_projection_matrix() * vec4(p_eye, 1.0);
+	float z_NDC = p_clip.z / p_clip.w;
+	gl_FragDepth = 0.5 * (z_NDC + 1.0);
 
 	/************************************************************************************/
 
