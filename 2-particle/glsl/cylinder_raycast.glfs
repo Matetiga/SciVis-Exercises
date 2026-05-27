@@ -1,15 +1,15 @@
 #version 150 
 
-//***** begin interface of fragment.glfs ***********************************
+// ***** begin interface of fragment.glfs ***********************************
 uniform float gamma = 2.2;
 void finish_fragment(vec4 color);
-//***** end interface of fragment.glfs ***********************************
+// ***** end interface of fragment.glfs ***********************************
 
 mat4 get_projection_matrix();
 
-//***** begin interface of surface.glsl ***********************************
+// ***** begin interface of surface.glsl ***********************************
 vec4 compute_reflected_appearance(vec3 position_eye, vec3 normal_eye, vec4 color, int side);
-//***** end interface of surface.glsl ***********************************
+// ***** end interface of surface.glsl ***********************************
 
 in vec3 position_eye;
 in vec4 color_fs;
@@ -82,22 +82,20 @@ void main()
 						Otherwise set lambda to true. Set the normal (n_ucyl) to vec3(0.0, 0.0, -+1.0)
 						depending on the side. */
 
-							
-					float epsilon = 0.001;
-					if (position_ucyl.z < epsilon) {
-						
-						n_ucyl = vec3(0.0, 0.0, -1.0);
-						need_lambda = false;
-					}
-					else if (position_ucyl.z > 1.0 - epsilon) {
-						
-						n_ucyl = vec3(0.0, 0.0, 1.0);
-						need_lambda = false;
-					}
-					else {
-						
-						need_lambda = true;
-					}
+		float epsilon = 0.001;
+		if (position_ucyl.z < epsilon) {
+			
+			n_ucyl = vec3(0.0, 0.0, -1.0);
+			need_lambda = false;
+		}
+		else if (position_ucyl.z > 1.0 - epsilon) {
+			
+			n_ucyl = vec3(0.0, 0.0, 1.0);
+			need_lambda = false;
+		}
+		else{
+			need_lambda = true;
+		}
 
 		/************************************************************************************/
 	}
@@ -128,7 +126,7 @@ void main()
 	/************************************************************************************
 	 tasks 2.2c:  Update gl_FragDepth with the corrected depth value for the intersection
 					point. */
-
+	
 	vec4 p_clip = get_projection_matrix() * vec4(p_eye, 1.0);
 	float z_NDC = p_clip.z / p_clip.w;
 	gl_FragDepth = 0.5 * (z_NDC + 1.0);

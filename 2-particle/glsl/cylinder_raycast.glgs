@@ -15,7 +15,7 @@ out mat4 hM_ucyl_eye;
 out mat3 NM_ucyl_eye;
 
 
-//***** begin interface of view.glsl ***********************************
+// ***** begin interface of view.glsl ***********************************
 mat4 get_modelview_matrix();
 mat4 get_projection_matrix();
 mat4 get_modelview_projection_matrix();
@@ -23,7 +23,7 @@ mat4 get_inverse_modelview_matrix();
 mat4 get_inverse_modelview_projection_matrix();
 mat3 get_normal_matrix();
 mat3 get_inverse_normal_matrix();
-//***** end interface of view.glsl ***********************************
+// ***** end interface of view.glsl ***********************************
 
 void emit_vertex(in mat4 hM_ucyl_clip, in mat4 hM_ucyl_eye, in vec4 pos_ucyl)
 {
@@ -60,7 +60,7 @@ void main()
 	mat4 hM_ucyl_world = mat4(0.0);
 	mat3 M_ucyl_world;
 
-	/************************************************************************************
+	/* ***********************************************************************************
      tasks 2.2a:  Compute the vectors u,v,t defining the cylinder orientation.Then
     				compute the transformation matrix from unit cylinder to world coordinates
     				(hM_ucyl_world). Also set the 3x3-transformation matrix (M_ucyl_world)
@@ -69,6 +69,38 @@ void main()
     			    uniform. */
 
      /*<your_code_here>*/
+	 vec4 P0 = gl_in[0].gl_Position;
+	 vec4 P1 = gl_in[1].gl_Position;
+	 float epsilon = 0.0001; // epsilon showed in Vorlesung, but what exactly?
+
+	 vec3 tangent = normalize(P1.xyz - P0.xyz);
+
+	 vec3 z = vec3(0,0,1);
+	 vec3 y = vec3(0,1,0);
+
+	 vec3 helper = tangent.x*tangent.x + tangent.y*tangent.y > epsilon ? z : y;
+	 vec3 u = normalize(cross(tangent, helper));
+	 vec3 v = normalize(cross(tangent, u));
+
+	 // column major !!
+	 // from unit cylinder to world 
+	 
+	 // this is causing a problem --> background black, when following Vorlesung order 
+	 // underneat in emit_quad(...) the first two components of each vector are the radial directions (u,v) from -1 to 1 
+	 // the 3rd component from 0 to 1 is the z direction along the cylinder axis (t)
+	 // the last component is always 1?
+	 // therefore switch order
+	hM_ucyl_world = mat4(vec4(radius * u, 0.0),
+							vec4(radius * v, 0.0),
+							vec4(P1.xyz-P0.xyz, 0.0), // this must be a direction so -> w=0 , otherwise after multiplication in line 32 w could be =2
+							vec4(P0.xyz, 1.0));
+	// for the normal transformation matrix
+	// normals must be transformed differently (take 3x3 left part of M_ucyl_world, invert it and transpose)
+	//M_ucyl_world = mat3(hM_ucyl_world[0].xyz, hM_ucyl_world[1].xyz, hM_ucyl_world[2].xyz);
+	M_ucyl_world = mat3(hM_ucyl_world);
+	// transpose and inverse is done on line 107
+	//M_ucyl_world = transpose(inverse(mat3(hM_ucyl_world)));
+
 
     /************************************************************************************/
 
