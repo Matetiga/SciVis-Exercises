@@ -36,7 +36,8 @@ bool compute_ray_sphere_intersection(out vec3 x_eye, out vec3 n_eye)
     /************************************************************************************
      tasks 2.1b:  Determine if the ray intersects with the sphere. If not return false.
                   Use q_tilde for an easy intersection test based on texture coordinates.*/
-
+    // basically q_tilde has the parameter space coordinate. since the sphere is a unit disk, 
+    // we can just get rid of the fragments which have dot products > 1
      if(dot(quad.q_tilde, quad.q_tilde) > 1.0f)
 		 return false;
 

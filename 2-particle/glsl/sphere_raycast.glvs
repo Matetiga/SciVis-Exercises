@@ -57,17 +57,21 @@ void main()
                  hints: The eye point in world coordinates is implicitly given by the inverse
                  of the model view matrix MV.*/
 
+    // sillhouette calculation according to the provided slides
      mat4 iMV = inverse(MV);
-
+     // basically the position of the sphere
      vec3 p = position.xyz;
+     // eye position extracted from the inverse model view matrix
      vec3 eye = vec3(iMV[3]);
 
      vec3 eyeVec = eye - p;
      float eLen = length(eyeVec);
 
+     // e_tilde = (eye-p)/r according to the slides
      sps.e_tilde = eyeVec/radius;
      sps.m_tilde = ((radius*radius)/(eLen*eLen))*sps.e_tilde;
 
+     // according to formula rho^2 = 1 - (r^2/eLen^2)
      float rho = sqrt(1.0 - (radius*radius)/(eLen*eLen));
 
      vec3 viewDir = normalize(sps.e_tilde);

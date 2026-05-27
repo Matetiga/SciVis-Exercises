@@ -63,8 +63,12 @@ void generate_quad_vertex(in vec4 sphere, in vec2 t, in sphere_parameter_space s
                  You can extent the 'quad' struct if you want to compute some other variables
                  here as well.*/
 
+    // doing step 1, computing the corner aka v_tilde in parameter space
      vec3 v_tilde = sps.m_tilde + t.x * sps.x_tilde + t.y * sps.y_tilde; 
-
+     // calculating the world pos.
+     // p.s. adding v_tilde instead of multiplying will cause issue with the scaling where the radius of the sphere has very minimum
+     // effect on the scale coz v_tilde is in parameter space and we need to rescale to the actual sphere radius.
+     // in this case the actual sphere radius is stored in w
      vec3 world_pos = sphere.xyz + sphere.w * v_tilde;
 
      vec4 v_eye4 = MV * vec4(world_pos, 1.0);
