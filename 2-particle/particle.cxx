@@ -40,6 +40,7 @@ protected:
 	std::vector<cgv::vec3> positions;     // (x,y,z)-coordinate of atom center
 	std::vector<cgv::vec4> colors;        // colors for each atom
 	std::vector<GLuint> connections;                            // connections stored as indices
+	std::vector<int> connection_orders; // number of bonds between two atoms (1 for single bond and 2 for double and so on)
 
 	cgv::render::view* view_ptr;
 
@@ -161,12 +162,14 @@ public:
 				else
 				{
 					std::istringstream iss(line);
-					int from, to;
-					iss >> from >> to;
+					int from, to, order;
+					iss >> from >> to >> order;
 
 					// store start and end position of this connection
 					connections.push_back(GLuint(from - 1));
 					connections.push_back(GLuint(to - 1));
+					// store bond order for this connection
+					connection_orders.push_back(order);
 				}
 				iteration++;
 			}
@@ -312,7 +315,48 @@ public:
 			cylinder_prog.set_uniform(ctx, "map_color_to_material", 3);
 
 			vertex_array_cylinder.enable(ctx);
-			glDrawElements(GL_LINES, (GLsizei)connections.size(), GL_UNSIGNED_INT, &connections.front());
+			//glDrawElements(GL_LINES, (GLsizei)connections.size(), GL_UNSIGNED_INT, &connections.front());
+
+			// instead of drawing everything in a single call had to draw each connection separately 
+			// to account for the bond order and draw double bonds with an offset
+			// ideally would be possible in a single draw call by changing the type of the connection vector to a custom struct
+			// that has the connections data and the bond order then it should be easier to implement but might cause other issues?
+			for (size_t i = 0; i < connection_orders.size(); ++i)
+			{
+				
+
+				if (connection_orders[i] == 2)
+				{
+					// +0.75 and -0.75 offset for double bonds
+					cylinder_prog.set_uniform(ctx, "bond_offset", +0.75f);
+
+					glDrawElements(
+						GL_LINES,
+						2,
+						GL_UNSIGNED_INT,
+						&connections[2 * i]
+					);
+
+					cylinder_prog.set_uniform(ctx, "bond_offset", -0.75f);
+
+					glDrawElements(
+						GL_LINES,
+						2,
+						GL_UNSIGNED_INT,
+						&connections[2 * i]
+					);
+				}
+				else {
+					// single bonds no offset
+					cylinder_prog.set_uniform(ctx, "bond_offset", 0.0f);
+					glDrawElements(
+						GL_LINES,
+						2,
+						GL_UNSIGNED_INT,
+						&connections[2 * i]
+					);
+				}
+			}
 			vertex_array_cylinder.disable(ctx);
 
 			// Disable shader program and texture
