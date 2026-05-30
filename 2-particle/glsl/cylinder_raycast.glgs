@@ -4,6 +4,8 @@ layout(lines) in;
 layout(triangle_strip, max_vertices = 24) out;
 
 uniform float radius;
+// special uniform for bond offset for double bonds
+uniform float bond_offset;
 
 in vec4 color_gs[];
 
@@ -81,6 +83,10 @@ void main()
 	 vec3 helper = tangent.x*tangent.x + tangent.y*tangent.y > epsilon ? z : y;
 	 vec3 u = normalize(cross(tangent, helper));
 	 vec3 v = normalize(cross(tangent, u));
+	 
+	 // special case for double bonds where we put a offset for the two bonds
+	 P0.xyz += bond_offset * radius * u;
+	 P1.xyz += bond_offset * radius * u;
 
 	 // column major !!
 	 // from unit cylinder to world 
