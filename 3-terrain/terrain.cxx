@@ -20,6 +20,9 @@
 #include <cgv/gui/key_event.h>
 #include <random>
 
+// FOR 3.1 
+# include<queue>
+
 class terrain :
 	public cgv::base::node,
 	public cgv::render::multi_pass_drawable,
@@ -101,10 +104,34 @@ protected:
 		return 2 * log2i((unsigned)N / n.base_length) + (n.omega&1);
 	}
 
-	
+	// For excercise 3.1 a)
+	cgv::vec2 getOrientation(float baseLength, unsigned int w) {
+		w = w % 8;
+		switch(w){
+		case 0:
+			return cgv::vec2(baseLength, 0);
+
+		case 1:
+			return cgv::vec2(baseLength / 2, baseLength / 2);
+
+		case 2:
+			return cgv::vec2(0, baseLength);
+		case 3:
+			return cgv::vec2(-baseLength / 2, baseLength / 2);
+		case 4:
+			return cgv::vec2(-baseLength, 0);
+		case 5: 
+			return cgv::vec2(-baseLength / 2, -baseLength / 2);
+		case 6:
+			return cgv::vec2(0, -baseLength);
+		case 7:
+			return cgv::vec2(baseLength / 2, -baseLength / 2);
+		}
+
+	}
 
 	/// return triangle node of left child
-	static triangle_node left_child(const triangle_node& n)
+	triangle_node left_child(const triangle_node& n)
 	{
 		// resulting triangle node
 		triangle_node res;
@@ -112,14 +139,26 @@ protected:
 		/************************************************************************************
 		 tasks 3.1a: Compute the left child of the current node n. */
 
-		 /*<your_code_here>*/
+		bool even_level = (level(n)& 1) == 0 ? true : false;
+		// add the textel position of the parent to the current base 
+		unsigned int edgeLength =n.base_length;
+	
+		cgv::vec2 v = getOrientation(edgeLength/2, n.omega + 4);
+		// recalculate the Diamond Point position for the left child
+		res.x = n.x + v.x();
+		res.y = n.y + v.y();
 
+		res.base_length = even_level ? edgeLength : edgeLength / 2;
+
+		// CHECK 
+		res.omega = (n.omega + 3) % 8;
+		
 		/************************************************************************************/
 		return res;
 	}
 
 	/// return triangle node of right child
-	static triangle_node right_child(const triangle_node& n)
+	triangle_node right_child(const triangle_node& n)
 	{
 		// resulting triangle node
 		triangle_node res;
@@ -127,8 +166,19 @@ protected:
 		/************************************************************************************
 		 tasks 3.1a: Compute the right child of the current node n. */
 
-		 /*<your_code_here>*/
+		bool even_level = (level(n)& 1) == 0 ? true : false;
 
+		unsigned int edgeLength = n.base_length;
+	
+		cgv::vec2 v = getOrientation(edgeLength/2, n.omega + 6);
+		// recalculate the Diamond Point position for the right child
+		res.x = n.x + v.x();
+		res.y = n.y + v.y();
+
+		res.base_length = even_level ? edgeLength : edgeLength / 2;
+
+		// CHECK THIS : omega in the node is not being stored with clamp up to 8 
+		res.omega = (n.omega + 5) % 8;
 		/************************************************************************************/
 		return res;
 	}
@@ -297,7 +347,10 @@ protected:
 		 tasks 3.1c: Add a check for AM_TREE_DEPTH mode: The tree level of the current node
 					   has to be greater or equal than the chosen adapted_tree_depth. */
 
-		 /*<your_code_here>*/
+		if (adaptation_mode == AM_TREE_DEPTH) {
+			std::cout << "level of current node: " << level(n) << std::endl;
+			return level(n) >= adapted_tree_depth;
+		}
 
 		/************************************************************************************/
 
@@ -334,7 +387,52 @@ protected:
  							colors    -> color of triangle orientation (see get_triangle_node_color())
  						With get_root_triangle(0/1) you can get both root triangles to start with. */
 
-		 /*<your_code_here>*/
+		std::vector<triangle_node> triangle_queue;
+		// insert both root triangles
+		triangle_queue.push_back(get_root_triangle(0));
+		triangle_queue.push_back(get_root_triangle(1));
+
+		while (!triangle_queue.empty()) {
+			triangle_node current_triangle = triangle_queue.front(); // this gets a reference
+
+			if (is_accurate(current_triangle)) {
+				// WHY IS BASE LENGHT = 4096 FOR THE FIRST TRIANGLES
+				std::cout << "current trianle x : " << current_triangle.x << " y: " << current_triangle.y << " base length: " << current_triangle.base_length << " omega: " << current_triangle.omega << std::endl;
+
+				cgv::vec2 edge0 = getOrientation(current_triangle.base_length / 2 , current_triangle.omega);
+				cgv::vec2 edge1 = getOrientation(current_triangle.base_length / 2, current_triangle.omega + 2);
+
+				std::cout << "edge0: " << edge0.x() << " " << edge0.y() << std::endl;
+				std::cout << "edge1: " << edge1.x() << " " << edge1.y() << std::endl;
+
+				// Important : first triangles coordinates will start at 2048, 2048
+				// assuming base of fisrt triangle should be located at 0, 0
+				// using the half of edge0 and edge1, which if added, point to the diamond coordinate of the triangle
+				// otherwise edge0 and edge1 are the complete lenght of the short edges of the triangle (so they cover until the tip of the triangle)
+				cgv::vec2 base = cgv::vec2((float)current_triangle.x - edge0.x() - edge1.x(),
+										   (float)current_triangle.y  - edge1.y() - edge0.y());
+
+				std::cout << "base: " << base.x() << " " << base.y() << std::endl;
+
+				// edges should be stored completely (not halved) otherwise the triangles don't touch 
+				edge0 *= 2;
+				edge1 *= 2;
+
+				positions.push_back(cgv::vec4(base.x(), base.y(), edge0.x(), edge0.y()));
+				// CHECK : now triangles are completely black, but normals are stored as indicated???
+				normals.push_back(cgv::vec3(edge1.x(), edge1.y(), subdivide_count));
+				colors.push_back(get_triangle_node_color(current_triangle));
+			}
+			else {
+				// insert left and right child into queue
+				triangle_queue.push_back(left_child(current_triangle));
+				triangle_queue.push_back(right_child(current_triangle));
+			}
+
+			// then remove 
+			auto first_element = triangle_queue.begin();
+			triangle_queue.erase(first_element);
+		}
 
 		/************************************************************************************/
 
@@ -544,7 +642,7 @@ public:
 		node("terrain")
 	{
 		max_tree_depth = 48;
-		adapted_tree_depth = 5;
+		adapted_tree_depth = 0;
 		adaptation_mode = AM_TREE_DEPTH;
 		root_error = 0;
 		root_radius = 0;
