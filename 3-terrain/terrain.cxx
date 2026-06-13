@@ -397,13 +397,9 @@ protected:
 
 			if (is_accurate(current_triangle)) {
 				// WHY IS BASE LENGHT = 4096 FOR THE FIRST TRIANGLES
-				std::cout << "current trianle x : " << current_triangle.x << " y: " << current_triangle.y << " base length: " << current_triangle.base_length << " omega: " << current_triangle.omega << std::endl;
 
 				cgv::vec2 edge0 = getOrientation(current_triangle.base_length / 2 , current_triangle.omega);
 				cgv::vec2 edge1 = getOrientation(current_triangle.base_length / 2, current_triangle.omega + 2);
-
-				std::cout << "edge0: " << edge0.x() << " " << edge0.y() << std::endl;
-				std::cout << "edge1: " << edge1.x() << " " << edge1.y() << std::endl;
 
 				// Important : first triangles coordinates will start at 2048, 2048
 				// assuming base of fisrt triangle should be located at 0, 0
@@ -412,16 +408,20 @@ protected:
 				cgv::vec2 base = cgv::vec2((float)current_triangle.x - edge0.x() - edge1.x(),
 										   (float)current_triangle.y  - edge1.y() - edge0.y());
 
-				std::cout << "base: " << base.x() << " " << base.y() << std::endl;
 
 				// edges should be stored completely (not halved) otherwise the triangles don't touch 
 				edge0 *= 2;
 				edge1 *= 2;
 
 				positions.push_back(cgv::vec4(base.x(), base.y(), edge0.x(), edge0.y()));
-				// CHECK : now triangles are completely black, but normals are stored as indicated???
 				normals.push_back(cgv::vec3(edge1.x(), edge1.y(), subdivide_count));
-				colors.push_back(get_triangle_node_color(current_triangle));
+
+				// CHECK THIS: triangles are black because of some problems with the method get_triangles_node_color 
+				// check line 627 (or method get_triangles_node_color) to see a better description of the error 
+				// if root_error and root_radius are fixed later, then use get_triangle_node_color...
+				//colors.push_back(get_triangle_node_color(current_triangle));
+				// for now keep this line 
+				colors.push_back(get_orientation_color(current_triangle.omega));
 			}
 			else {
 				// insert left and right child into queue
@@ -612,13 +612,22 @@ protected:
 		float v = error / root_error;
 		float radius = radii[idx];
 		float w = radius / root_radius;
+
 		cgv::rgb error_color(v, 0.5f, 1.0f - v);
 		cgv::rgb radius_color(0.5f, w, 0.5f);
+
 		float lambda = std::max(error_lambda, radius_lambda);
+
 		if (lambda < 0.001f)
 			return get_orientation_color(n.omega);
+
 		cgv::rgb color = error_lambda / (error_lambda + radius_lambda)*error_color +
 			radius_lambda / (error_lambda + radius_lambda)*radius_color;
+
+		// PROBLEM : v and w is returning -nan which then is causing error_color and radius_color to be nan 
+		// this is then fed to color which also will be NaN (and therefore black triangles)
+		//std::cout << "current color " << color << std::endl;
+
 		return lambda * color + (1 - lambda)*get_orientation_color(n.omega);
 	}
 	/// lambda to blend between color from color texture and from error/radius/orientation visualization
