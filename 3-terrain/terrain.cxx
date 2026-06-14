@@ -313,8 +313,72 @@ protected:
 		 			   of the current diamond. world_point() gives you 3d world point of the diamond
 					   point of a triangle.*/
 
-		 /*<your_code_here>*/
-		 return 0;
+		if (processed[index(n)])
+			return errors[index(n)];
+
+		if ((level(n) & 1) && n.base_length == 1) {
+			errors[index(n)] = 0.0f;
+			processed[index(n)] = true;
+			return 0;
+		 }
+		 cgv::vec2 dir = getOrientation(n.base_length, n.omega);
+
+		 short x0 = n.x - short(dir.x() * 0.5f);
+		 short y0 = n.y - short(dir.y() * 0.5f);
+		 short x1 = n.x + short(dir.x() * 0.5f);
+		 short y1 = n.y + short(dir.y() * 0.5f);
+
+		 x0 = std::min(std::max(x0, short(0)), short(N));
+		 y0 = std::min(std::max(y0, short(0)), short(N));
+		 x1 = std::min(std::max(x1, short(0)), short(N));
+		 y1 = std::min(std::max(y1, short(0)), short(N));
+
+		 float zc =
+			 heights[index(n)] / float(max_dem_value);
+
+		 float z0 =
+			 heights[index(x0, y0)] / float(max_dem_value);
+
+		 float z1 =
+			 heights[index(x1, y1)] / float(max_dem_value);
+
+		 float zT = 0.5f * (z0 + z1);
+
+		 float local_error = fabs(zc - zT);
+
+		 float child_error = 0.0f;
+
+		 if (!is_leaf(n)) {
+			 float e0 = compute_error(left_child(n));
+			 float e1 = compute_error(right_child(n));
+
+			 child_error = std::max(e0, e1);
+			 triangle_node nn;
+
+			 if (has_diamond_neighbor(n, nn)) {
+
+				 float e0 = compute_error(left_child(n));
+				 float e1 = compute_error(right_child(n));
+
+				 float e2 = compute_error(left_child(nn));
+				 float e3 = compute_error(right_child(nn));
+
+				 child_error =
+					 std::max(
+						 std::max(e0, e1),
+						 std::max(e2, e3)
+					 );
+			 }
+		 }
+
+		 
+
+		 float err = child_error + local_error;
+
+		 errors[index(n)] = err;
+		 processed[index(n)] = true;
+
+		 return err;
 
 		/************************************************************************************/
 	}
@@ -422,6 +486,34 @@ protected:
 				//colors.push_back(get_triangle_node_color(current_triangle));
 				// for now keep this line 
 				colors.push_back(get_orientation_color(current_triangle.omega));
+
+				/************************************************************************************/
+
+				/************************************************************************************
+				 tasks 3.2b: If show_error_spheres is true fill the spheres vector with the world point
+							   of accurate triangle nodes. Set the error multiplied with the z-extent as
+							   a radius and fill the spheres_colors vector with the color of the triangle
+							   node.
+							   The following informations need to be stored in the spheres-vector:
+							   cgv::vec4(n.x, n.y, n.z, radius)*/
+
+				if (show_error_spheres)
+				{
+					triangle_node current_triangle = triangle_queue.front();
+
+					cgv::vec3 p = world_point(current_triangle);
+
+					float radius =
+						errors[index(current_triangle)] * extent(2);
+
+					spheres.push_back(
+						cgv::vec4(p.x(), p.y(), p.z(), radius)
+					);
+
+					sphere_colors.push_back(
+						get_triangle_node_color(current_triangle)
+					);
+				}
 			}
 			else {
 				// insert left and right child into queue
@@ -432,20 +524,10 @@ protected:
 			// then remove 
 			auto first_element = triangle_queue.begin();
 			triangle_queue.erase(first_element);
+		
+
+		
 		}
-
-		/************************************************************************************/
-
-		/************************************************************************************
-		 tasks 3.2b: If show_error_spheres is true fill the spheres vector with the world point
-					   of accurate triangle nodes. Set the error multiplied with the z-extent as
-					   a radius and fill the spheres_colors vector with the color of the triangle
-					   node.
-					   The following informations need to be stored in the spheres-vector:
-					   cgv::vec4(n.x, n.y, n.z, radius)*/
-
-		 /*<your_code_here>*/
-
 		/************************************************************************************/
 
 		/************************************************************************************
