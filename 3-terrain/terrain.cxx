@@ -318,8 +318,6 @@ protected:
 		if (processed[idx])
 			return errors[idx];
 
-		// Safety stop from the task comment.
-		// Normally we should not even reach this when tree_depth is handled correctly.
 		if ((level(n) & 1) && n.base_length == 1) {
 			errors[idx] = 0.0f;
 			processed[idx] = true;
@@ -349,9 +347,7 @@ protected:
 
 		float child_error = 0.0f;
 
-		// CRITICAL:
-		// At level == tree_depth, compute the local error above,
-		// but do NOT recurse further.
+		
 		if (level(n) < tree_depth) {
 			float e0 = compute_error(left_child(n));
 			float e1 = compute_error(right_child(n));
@@ -390,23 +386,20 @@ protected:
 		 			   of the current diamond. world_point() gives you 3d world point of the diamond
 					   point of a triangle. */
 
-		int idx = index(n);
+		
 
-		if (processed[idx])
-			return radii[idx];
+		if (processed[index(n)])
+			return radii[index(n)];
 
-		// Leaf threshold sphere radius is zero, as required by the nested sphere rule.
+		// Leaf nodes can't be broken down further, so radius is zero.
 		if (is_leaf(n) || level(n) >= tree_depth) {
-			radii[idx] = 0.0f;
-			processed[idx] = true;
+			radii[index(n)] = 0.0f;
+			processed[index(n)] = true;
 			return 0.0f;
 		}
 
-		// Base threshold radius:
-		// r_T = c * e_T / tau
-		// errors[] is normalized height error, so multiply by extent(2).
-		float world_error = errors[idx] * extent(2);
-
+		float world_error = errors[index(n)] * extent(2);
+		// Larger error means that the viewer must be farther away before the triangle is accurate
 		float r = 0.0f;
 		if (pixel_threshold > 1e-6f)
 			r = view_factor * world_error / pixel_threshold;
@@ -438,8 +431,8 @@ protected:
 			include_child_sphere(right_child(nn));
 		}
 
-		radii[idx] = r;
-		processed[idx] = true;
+		radii[index(n)] = r;
+		processed[index(n)] = true;
 
 		return r;
 
@@ -494,14 +487,14 @@ protected:
 			float dist_to_center = std::sqrt(dx * dx + dy * dy + dz * dz);
 			float radius = radii[idx];
 
-			// If the eye is inside the threshold sphere, the triangle is inaccurate.
+			// If the camera is inside this sphere, the triangle is inaccurate
 			if (dist_to_center <= radius)
 				return false;
 
 			if (pixel_threshold <= 1e-6f)
 				return false;
 
-			// Important: use distance to the sphere boundary, not only to the center.
+			// distance is calculated to the sphere boundary, not only to the center.
 			float dist_to_sphere = std::max(dist_to_center - radius, 1e-6f);
 
 			float pixel_error = view_factor * world_error / dist_to_sphere;
@@ -617,7 +610,7 @@ protected:
 					   The following informations need to be stored in the spheres-vector:
 					   cgv::vec4(n.x, n.y, n.z, radius)*/
 
-		 /*<your_code_here>*/
+					   //3.2b is implemented in the same loop as 3.1b to avoid multiple traversals of the tree
 
 		/************************************************************************************/
 	}
