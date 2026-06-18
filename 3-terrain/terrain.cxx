@@ -20,6 +20,9 @@
 #include <cgv/gui/key_event.h>
 #include <random>
 
+// FOR 3.1 
+# include<queue>
+
 class terrain :
 	public cgv::base::node,
 	public cgv::render::multi_pass_drawable,
@@ -101,10 +104,34 @@ protected:
 		return 2 * log2i((unsigned)N / n.base_length) + (n.omega&1);
 	}
 
-	
+	// For excercise 3.1 a)
+	cgv::vec2 getOrientation(float baseLength, unsigned int w) {
+		w = w % 8;
+		switch(w){
+		case 0:
+			return cgv::vec2(baseLength, 0);
+
+		case 1:
+			return cgv::vec2(baseLength / 2, baseLength / 2);
+
+		case 2:
+			return cgv::vec2(0, baseLength);
+		case 3:
+			return cgv::vec2(-baseLength / 2, baseLength / 2);
+		case 4:
+			return cgv::vec2(-baseLength, 0);
+		case 5: 
+			return cgv::vec2(-baseLength / 2, -baseLength / 2);
+		case 6:
+			return cgv::vec2(0, -baseLength);
+		case 7:
+			return cgv::vec2(baseLength / 2, -baseLength / 2);
+		}
+
+	}
 
 	/// return triangle node of left child
-	static triangle_node left_child(const triangle_node& n)
+	triangle_node left_child(const triangle_node& n)
 	{
 		// resulting triangle node
 		triangle_node res;
@@ -112,14 +139,26 @@ protected:
 		/************************************************************************************
 		 tasks 3.1a: Compute the left child of the current node n. */
 
-		 /*<your_code_here>*/
+		bool even_level = (level(n)& 1) == 0 ? true : false;
+		// add the textel position of the parent to the current base 
+		unsigned int edgeLength =n.base_length;
+	
+		cgv::vec2 v = getOrientation(edgeLength/2, n.omega + 4);
+		// recalculate the Diamond Point position for the left child
+		res.x = n.x + v.x();
+		res.y = n.y + v.y();
 
+		res.base_length = even_level ? edgeLength : edgeLength / 2;
+
+		// CHECK 
+		res.omega = (n.omega + 3) % 8;
+		
 		/************************************************************************************/
 		return res;
 	}
 
 	/// return triangle node of right child
-	static triangle_node right_child(const triangle_node& n)
+	triangle_node right_child(const triangle_node& n)
 	{
 		// resulting triangle node
 		triangle_node res;
@@ -127,8 +166,19 @@ protected:
 		/************************************************************************************
 		 tasks 3.1a: Compute the right child of the current node n. */
 
-		 /*<your_code_here>*/
+		bool even_level = (level(n)& 1) == 0 ? true : false;
 
+		unsigned int edgeLength = n.base_length;
+	
+		cgv::vec2 v = getOrientation(edgeLength/2, n.omega + 6);
+		// recalculate the Diamond Point position for the right child
+		res.x = n.x + v.x();
+		res.y = n.y + v.y();
+
+		res.base_length = even_level ? edgeLength : edgeLength / 2;
+
+		// CHECK THIS : omega in the node is not being stored with clamp up to 8 
+		res.omega = (n.omega + 5) % 8;
 		/************************************************************************************/
 		return res;
 	}
@@ -260,11 +310,66 @@ protected:
 					   The error is set to zero for triangles in odd levels with base length 1 since a finer
 					   tessellation is not possible.
 					   Use the has_diamond_neighbor()-method to get the neighboring triangle node
-		 			   of the current diamond. world_point() gives you 3d world point of the diamond
+					   of the current diamond. world_point() gives you 3d world point of the diamond
 					   point of a triangle.*/
 
-		 /*<your_code_here>*/
-		 return 0;
+		int idx = index(n);
+
+		if (processed[idx])
+			return errors[idx];
+
+		if ((level(n) & 1) && n.base_length == 1) {
+			errors[idx] = 0.0f;
+			processed[idx] = true;
+			return 0.0f;
+		}
+
+		// Long-edge endpoints of the rendered triangle.
+		// This matches the triangle geometry used later in tesselate_adaptive().
+		cgv::vec2 edge0 = getOrientation(0.5f * float(n.base_length), n.omega);
+		cgv::vec2 edge1 = getOrientation(0.5f * float(n.base_length), n.omega + 2);
+
+		short x0 = short(n.x + edge0.x() - edge1.x());
+		short y0 = short(n.y + edge0.y() - edge1.y());
+		short x1 = short(n.x - edge0.x() + edge1.x());
+		short y1 = short(n.y - edge0.y() + edge1.y());
+
+		x0 = std::min(std::max(x0, short(0)), short(N));
+		y0 = std::min(std::max(y0, short(0)), short(N));
+		x1 = std::min(std::max(x1, short(0)), short(N));
+		y1 = std::min(std::max(y1, short(0)), short(N));
+
+		float zc = heights[idx] / float(max_dem_value);
+		float z0 = heights[index(x0, y0)] / float(max_dem_value);
+		float z1 = heights[index(x1, y1)] / float(max_dem_value);
+
+		float local_error = std::fabs(zc - 0.5f * (z0 + z1));
+
+		float child_error = 0.0f;
+
+		
+		if (level(n) < tree_depth) {
+			float e0 = compute_error(left_child(n));
+			float e1 = compute_error(right_child(n));
+
+			child_error = std::max(e0, e1);
+
+			triangle_node nn;
+			if (has_diamond_neighbor(n, nn)) {
+				float e2 = compute_error(left_child(nn));
+				float e3 = compute_error(right_child(nn));
+
+				child_error = std::max(child_error, e2);
+				child_error = std::max(child_error, e3);
+			}
+		}
+
+		float err = child_error + local_error;
+
+		errors[idx] = err;
+		processed[idx] = true;
+
+		return err;
 
 		/************************************************************************************/
 	}
@@ -281,8 +386,55 @@ protected:
 		 			   of the current diamond. world_point() gives you 3d world point of the diamond
 					   point of a triangle. */
 
-		 /*<your_code_here>*/
-		 return 0;
+		
+
+		if (processed[index(n)])
+			return radii[index(n)];
+
+		// Leaf nodes can't be broken down further, so radius is zero.
+		if (is_leaf(n) || level(n) >= tree_depth) {
+			radii[index(n)] = 0.0f;
+			processed[index(n)] = true;
+			return 0.0f;
+		}
+
+		float world_error = errors[index(n)] * extent(2);
+		// Larger error means that the viewer must be farther away before the triangle is accurate
+		float r = 0.0f;
+		if (pixel_threshold > 1e-6f)
+			r = view_factor * world_error / pixel_threshold;
+		else
+			r = world_error > 0.0f ? 1e20f : 0.0f;
+
+		cgv::vec3 p = world_point(n);
+
+		auto include_child_sphere = [&](const triangle_node& child) {
+			float child_radius = compute_radius(child);
+			cgv::vec3 q = world_point(child);
+
+			float dx = p.x() - q.x();
+			float dy = p.y() - q.y();
+			float dz = p.z() - q.z();
+
+			float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+
+			// Parent sphere must completely contain child sphere.
+			r = std::max(r, dist + child_radius);
+			};
+
+		include_child_sphere(left_child(n));
+		include_child_sphere(right_child(n));
+
+		triangle_node nn;
+		if (has_diamond_neighbor(n, nn)) {
+			include_child_sphere(left_child(nn));
+			include_child_sphere(right_child(nn));
+		}
+
+		radii[index(n)] = r;
+		processed[index(n)] = true;
+
+		return r;
 
 		/************************************************************************************/
 	}
@@ -297,7 +449,9 @@ protected:
 		 tasks 3.1c: Add a check for AM_TREE_DEPTH mode: The tree level of the current node
 					   has to be greater or equal than the chosen adapted_tree_depth. */
 
-		 /*<your_code_here>*/
+		if (adaptation_mode == AM_TREE_DEPTH) {
+			return level(n) >= adapted_tree_depth;
+		}
 
 		/************************************************************************************/
 
@@ -315,7 +469,37 @@ protected:
 					   Some useful variables: The eye position (e) can be access with eye_world.
 					   The variable c for computing the pixel error is given by view_factor.*/
 
-		 /*<your_code_here>*/
+		if (adaptation_mode == AM_ISOTROPIC_ERROR) {
+			int idx = index(n);
+
+			float world_error = errors[idx] * extent(2);
+
+			if (world_error <= 0.0f)
+				return true;
+
+			cgv::vec3 p = world_point(n);
+
+			float dx = p.x() - eye_world.x();
+			float dy = p.y() - eye_world.y();
+			float dz = p.z() - eye_world.z();
+
+			float dist_to_center = std::sqrt(dx * dx + dy * dy + dz * dz);
+			float radius = radii[idx];
+
+			// If the camera is inside this sphere, the triangle is inaccurate
+			if (dist_to_center <= radius)
+				return false;
+
+			if (pixel_threshold <= 1e-6f)
+				return false;
+
+			// distance is calculated to the sphere boundary, not only to the center.
+			float dist_to_sphere = std::max(dist_to_center - radius, 1e-6f);
+
+			float pixel_error = view_factor * world_error / dist_to_sphere;
+
+			return pixel_error <= pixel_threshold;
+		}
 
 		/************************************************************************************/
 
@@ -334,20 +518,87 @@ protected:
  							colors    -> color of triangle orientation (see get_triangle_node_color())
  						With get_root_triangle(0/1) you can get both root triangles to start with. */
 
-		 /*<your_code_here>*/
+		std::vector<triangle_node> triangle_queue;
+		// insert both root triangles
+		triangle_queue.push_back(get_root_triangle(0));
+		triangle_queue.push_back(get_root_triangle(1));
 
-		/************************************************************************************/
+		while (!triangle_queue.empty()) {
+			triangle_node current_triangle = triangle_queue.front(); // this gets a reference
 
-		/************************************************************************************
-		 tasks 3.2b: If show_error_spheres is true fill the spheres vector with the world point
-					   of accurate triangle nodes. Set the error multiplied with the z-extent as
-					   a radius and fill the spheres_colors vector with the color of the triangle
-					   node.
-					   The following informations need to be stored in the spheres-vector:
-					   cgv::vec4(n.x, n.y, n.z, radius)*/
+			if (is_accurate(current_triangle)) {
+				// WHY IS BASE LENGHT = 4096 FOR THE FIRST TRIANGLES
 
-		 /*<your_code_here>*/
+				cgv::vec2 edge0 = getOrientation(current_triangle.base_length, current_triangle.omega) ;
+				cgv::vec2 edge1 = getOrientation(current_triangle.base_length  ,current_triangle.omega + 2);
 
+				// Important : first triangles coordinates will start at 2048, 2048
+				// assuming base of fisrt triangle should be located at 0, 0
+				// using the half of edge0 and edge1, which if added, point to the diamond coordinate of the triangle
+				// otherwise edge0 and edge1 are the complete lenght of the short edges of the triangle (so they cover until the tip of the triangle)
+				cgv::vec2 base = cgv::vec2( ( (float)current_triangle.x  - (edge0.x() + edge1.x()) *0.5),
+										     (float)current_triangle.y  - (edge1.y() + edge0.y()) * 0.5);
+
+
+				edge0 /= subdivide_count;
+				edge1 /= subdivide_count;
+
+				positions.push_back(cgv::vec4(base.x(), base.y(), edge0.x(), edge0.y()));
+				normals.push_back(cgv::vec3(edge1.x(), edge1.y(), subdivide_count));
+
+				// CHECK THIS: triangles are black because of some problems with the method get_triangles_node_color 
+				// check line 627 (or method get_triangles_node_color) to see a better description of the error 
+				// if root_error and root_radius are fixed later, then use get_triangle_node_color...
+				colors.push_back(get_triangle_node_color(current_triangle));
+				// for now keep this line 
+				//colors.push_back(get_orientation_color(current_triangle.omega));
+
+				/************************************************************************************/
+
+				/************************************************************************************
+				 tasks 3.2b: If show_error_spheres is true fill the spheres vector with the world point
+							   of accurate triangle nodes. Set the error multiplied with the z-extent as
+							   a radius and fill the spheres_colors vector with the color of the triangle
+							   node.
+							   The following informations need to be stored in the spheres-vector:
+							   cgv::vec4(n.x, n.y, n.z, radius)*/
+				cgv::vec3 p = world_point(current_triangle);
+
+				if (show_error_spheres)
+				{
+				
+					
+					float radius =
+						errors[index(current_triangle)] * extent(2);
+
+					spheres.push_back(
+						cgv::vec4(p.x(), p.y(), p.z(), radius)
+					);
+
+					sphere_colors.push_back(
+						get_triangle_node_color(current_triangle)
+					);
+				}
+				if (show_threshold_spheres) {
+					float radius = radii[index(current_triangle)];
+
+					spheres.push_back(cgv::vec4(p.x(), p.y(), p.z(), radius));
+					sphere_colors.push_back(get_triangle_node_color(current_triangle));
+				}
+			}
+			else {
+				// insert left and right child into queue
+				triangle_queue.push_back(left_child(current_triangle));
+				triangle_queue.push_back(right_child(current_triangle));
+			}
+
+			// then remove 
+			auto first_element = triangle_queue.begin();
+			triangle_queue.erase(first_element);
+		
+
+		
+		}
 		/************************************************************************************/
 
 		/************************************************************************************
@@ -357,7 +608,7 @@ protected:
 					   The following informations need to be stored in the spheres-vector:
 					   cgv::vec4(n.x, n.y, n.z, radius)*/
 
-		 /*<your_code_here>*/
+					   //3.2b is implemented in the same loop as 3.1b to avoid multiple traversals of the tree
 
 		/************************************************************************************/
 	}
@@ -514,13 +765,22 @@ protected:
 		float v = error / root_error;
 		float radius = radii[idx];
 		float w = radius / root_radius;
+
 		cgv::rgb error_color(v, 0.5f, 1.0f - v);
 		cgv::rgb radius_color(0.5f, w, 0.5f);
+
 		float lambda = std::max(error_lambda, radius_lambda);
+
 		if (lambda < 0.001f)
 			return get_orientation_color(n.omega);
+
 		cgv::rgb color = error_lambda / (error_lambda + radius_lambda)*error_color +
 			radius_lambda / (error_lambda + radius_lambda)*radius_color;
+
+		// PROBLEM : v and w is returning -nan which then is causing error_color and radius_color to be nan 
+		// this is then fed to color which also will be NaN (and therefore black triangles)
+		//std::cout << "current color " << color << std::endl;
+
 		return lambda * color + (1 - lambda)*get_orientation_color(n.omega);
 	}
 	/// lambda to blend between color from color texture and from error/radius/orientation visualization
@@ -544,7 +804,7 @@ public:
 		node("terrain")
 	{
 		max_tree_depth = 48;
-		adapted_tree_depth = 5;
+		adapted_tree_depth = 0;
 		adaptation_mode = AM_TREE_DEPTH;
 		root_error = 0;
 		root_radius = 0;
