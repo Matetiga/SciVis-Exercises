@@ -348,7 +348,6 @@ protected:
 					   has to be greater or equal than the chosen adapted_tree_depth. */
 
 		if (adaptation_mode == AM_TREE_DEPTH) {
-			std::cout << "level of current node: " << level(n) << std::endl;
 			return level(n) >= adapted_tree_depth;
 		}
 
@@ -398,20 +397,19 @@ protected:
 			if (is_accurate(current_triangle)) {
 				// WHY IS BASE LENGHT = 4096 FOR THE FIRST TRIANGLES
 
-				cgv::vec2 edge0 = getOrientation(current_triangle.base_length / 2 , current_triangle.omega);
-				cgv::vec2 edge1 = getOrientation(current_triangle.base_length / 2, current_triangle.omega + 2);
+				cgv::vec2 edge0 = getOrientation(current_triangle.base_length, current_triangle.omega) ;
+				cgv::vec2 edge1 = getOrientation(current_triangle.base_length  ,current_triangle.omega + 2);
 
 				// Important : first triangles coordinates will start at 2048, 2048
 				// assuming base of fisrt triangle should be located at 0, 0
 				// using the half of edge0 and edge1, which if added, point to the diamond coordinate of the triangle
 				// otherwise edge0 and edge1 are the complete lenght of the short edges of the triangle (so they cover until the tip of the triangle)
-				cgv::vec2 base = cgv::vec2((float)current_triangle.x - edge0.x() - edge1.x(),
-										   (float)current_triangle.y  - edge1.y() - edge0.y());
+				cgv::vec2 base = cgv::vec2( ( (float)current_triangle.x  - (edge0.x() + edge1.x()) *0.5),
+										     (float)current_triangle.y  - (edge1.y() + edge0.y()) * 0.5);
 
 
-				// edges should be stored completely (not halved) otherwise the triangles don't touch 
-				edge0 *= 2;
-				edge1 *= 2;
+				edge0 /= subdivide_count;
+				edge1 /= subdivide_count;
 
 				positions.push_back(cgv::vec4(base.x(), base.y(), edge0.x(), edge0.y()));
 				normals.push_back(cgv::vec3(edge1.x(), edge1.y(), subdivide_count));
