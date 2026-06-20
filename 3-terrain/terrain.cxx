@@ -313,11 +313,19 @@ protected:
 					   of the current diamond. world_point() gives you 3d world point of the diamond
 					   point of a triangle.*/
 
-		int idx = index(n);
+		// this recursive compute_error function might be the reason 
+		// the code is kinda slow on startup?
 
+		int idx = index(n);
+		// check if already computed
+		// trying to kinda make it faster
+
+		// each diamond point can be reached through multiple triangles
+		
 		if (processed[idx])
 			return errors[idx];
-
+		// leaf nodes
+		// best possible resolution when there is no more refinement
 		if ((level(n) & 1) && n.base_length == 1) {
 			errors[idx] = 0.0f;
 			processed[idx] = true;
@@ -329,25 +337,29 @@ protected:
 		cgv::vec2 edge0 = getOrientation(0.5f * float(n.base_length), n.omega);
 		cgv::vec2 edge1 = getOrientation(0.5f * float(n.base_length), n.omega + 2);
 
+		// endpoint coordinates
 		short x0 = short(n.x + edge0.x() - edge1.x());
 		short y0 = short(n.y + edge0.y() - edge1.y());
 		short x1 = short(n.x - edge0.x() + edge1.x());
 		short y1 = short(n.y - edge0.y() + edge1.y());
-
+		// making sure we clamp to valid texture coordinates
 		x0 = std::min(std::max(x0, short(0)), short(N));
 		y0 = std::min(std::max(y0, short(0)), short(N));
 		x1 = std::min(std::max(x1, short(0)), short(N));
 		y1 = std::min(std::max(y1, short(0)), short(N));
-
+		// get heights
+		//diamond height
 		float zc = heights[idx] / float(max_dem_value);
+		// first endpoint height
 		float z0 = heights[index(x0, y0)] / float(max_dem_value);
+		// second endpoint height
 		float z1 = heights[index(x1, y1)] / float(max_dem_value);
 
 		float local_error = std::fabs(zc - 0.5f * (z0 + z1));
 
 		float child_error = 0.0f;
 
-		
+		// now we recurse on valid children
 		if (level(n) < tree_depth) {
 			float e0 = compute_error(left_child(n));
 			float e1 = compute_error(right_child(n));
@@ -363,7 +375,7 @@ protected:
 				child_error = std::max(child_error, e3);
 			}
 		}
-
+		// total nested error
 		float err = child_error + local_error;
 
 		errors[idx] = err;
@@ -562,19 +574,20 @@ protected:
 							   node.
 							   The following informations need to be stored in the spheres-vector:
 							   cgv::vec4(n.x, n.y, n.z, radius)*/
+				// sphere center
 				cgv::vec3 p = world_point(current_triangle);
 
 				if (show_error_spheres)
 				{
 				
-					
+					// calculate sphere radius
 					float radius =
 						errors[index(current_triangle)] * extent(2);
-
+					// store em
 					spheres.push_back(
 						cgv::vec4(p.x(), p.y(), p.z(), radius)
 					);
-
+					// store colors
 					sphere_colors.push_back(
 						get_triangle_node_color(current_triangle)
 					);
