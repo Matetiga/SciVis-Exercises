@@ -35,13 +35,49 @@ void finish_fragment(vec4 color);
 
 vec3 estimate_normal(in vec2 tc)
 {
-	vec2 tx = dFdx(tc);
-	vec2 ty = dFdy(tc);
-	vec2 hg = vec2(
-		texture(dem_tex, tc + 0.5*tx).x - texture(dem_tex, tc - 0.5*tx).x,
-		texture(dem_tex, tc + 0.5*ty).x - texture(dem_tex, tc - 0.5*ty).x);
+	//vec2 tx = dFdx(tc);
+	//vec2 ty = dFdy(tc);
+	//vec2 hg = vec2(
+	//	texture(dem_tex, tc + 0.5*tx).x - texture(dem_tex, tc - 0.5*tx).x,
+	//	texture(dem_tex, tc + 0.5*ty).x - texture(dem_tex, tc - 0.5*ty).x);
+	// get the texel size
+	vec2 texel = 1.0/textureSize(dem_tex,0);
 
-	hg /= (extent.xy*vec2(length(tx), length(ty)));
+	// sampling neighbours of the texel for the sobel operator
+	// basicallyu the 3x3 neighborhood
+	float h00 = texture(dem_tex, tc + texel * vec2(-1,-1)).r;
+	float h01 = texture(dem_tex, tc + texel * vec2( 0,-1)).r;
+	float h02 = texture(dem_tex, tc + texel * vec2( 1,-1)).r;
+
+	float h10 = texture(dem_tex, tc + texel * vec2(-1, 0)).r;
+	
+	float h12 = texture(dem_tex, tc + texel * vec2( 1, 0)).r;
+
+	float h20 = texture(dem_tex, tc + texel * vec2(-1, 1)).r;
+	float h21 = texture(dem_tex, tc + texel * vec2( 0, 1)).r;
+	float h22 = texture(dem_tex, tc + texel * vec2( 1, 1)).r;
+
+	// apply kernel to the height values
+	// in math:
+	//	(-1*h00) + (0*h01) + (1*h02)
+	//	(-2*h10) + (0*h11) + (2*h12)
+	//	(-1*h20) + (0*h21) + (1*h22)
+
+	// so when gx > 0 terrain rises to right
+	// when gx < 0 terrain rises to left
+	float gx = - h00 + h02 - 2.0*h10 + 2.0*h12 - h20 + h22;
+
+	// applies in math:
+	//  (-1*h00) + (-2*h01) + (-1*h02)
+	//  ( 0*h10) + ( 0*h11) + ( 0*h12)
+	//  ( 1*h20) + ( 2*h21) + ( 1*h22)
+	// so when gy > 0 terrain goes down
+	// when gy < 0 terrain goes up
+	float gy = -h00 - 2.0*h01 - h02 + h20 + 2.0*h21 + h22;
+
+	// same as before
+	vec2 hg = vec2(gx,gy);
+	hg /= extent.xy;
 	hg *= extent.z;
 	return normalize(get_normal_matrix()*vec3(-hg, 1.0));
 }
