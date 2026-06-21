@@ -621,7 +621,7 @@ protected:
 					   The following informations need to be stored in the spheres-vector:
 					   cgv::vec4(n.x, n.y, n.z, radius)*/
 
-					   //3.3b is implemented in the same loop as 3.1b to avoid multiple traversals of the tree
+					   //3.3b is implemented in the same loop as 3.2b to avoid multiple traversals of the tree
 
 		/************************************************************************************/
 	}
