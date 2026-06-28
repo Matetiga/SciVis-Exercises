@@ -283,8 +283,8 @@ public:
 		 tasks 4.1a: Compute the signed distance between the given point p and the slice which
 					   is defined through oblique_slice_normal and oblique_slice_distance. */
 
-		 /*<your_code_here>*/
-		 return 0;
+		return dot(oblique_slice_normal, p) - oblique_slice_distance;
+		
 
 		/************************************************************************************/
 	}
@@ -292,6 +292,17 @@ public:
 	/// the volume
 	void construct_oblique_slice(std::vector<cgv::vec3>& polygon)
 	{
+		const cgv::vec3 corners[8] = {
+		{0,0,0}, {1,0,0}, {0,1,0}, {1,1,0},
+		{0,0,1}, {1,0,1}, {0,1,1}, {1,1,1}
+		};
+
+		
+		const int edges[12][2] = {
+			{0,1}, {1,3}, {3,2}, {2,0},  
+			{4,5}, {5,7}, {7,6}, {6,4}, 
+			{0,4}, {1,5}, {3,7}, {2,6}   
+		};
 		/************************************************************************************
 		 tasks 4.1b: Classify the volume box corners (vertices) as inside or outside vertices.
 					   The volume box is a unit cube.
@@ -299,7 +310,12 @@ public:
 					   distance between each box corner and the slice. Assume that outside vertices
 					   have a positive distance.*/
 
-		 /*<your_code_here>*/
+		float dist[8];
+		bool  inside[8];
+		for (int i = 0; i < 8; i++) {
+			dist[i] = signed_distance_from_oblique_slice(corners[i]);
+			inside[i] = (dist[i] >= 0.0f);
+		}
 
 		/************************************************************************************/
 
@@ -308,11 +324,20 @@ public:
 					   corners. Remember that the edge point coordinates are in range [0,1] for
 					   all dimensions since they are 3D-texture coordinates. These points are
 					   stored in the polygon-vector.
+
+
 		 tasks 4.1d: Arrange the points along face adjacencies for easier tessellation of the
 					   polygon. Store the ordered edge points in the polygon-vector. Create your own
 					   helper structures for edge-face adjacenies etc.*/
 
-		 /*<your_code_here>*/
+		for (int e = 0; e < 12; e++) {
+			int a = edges[e][0];
+			int b = edges[e][1];
+			if (inside[a] != inside[b]) {                      
+				float t = dist[a] / (dist[a] - dist[b]);      
+				polygon.push_back(corners[a] + t * (corners[b] - corners[a])); 
+			}
+		}
 
 		/************************************************************************************/
 	}
