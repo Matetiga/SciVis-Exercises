@@ -329,16 +329,49 @@ public:
 		 tasks 4.1d: Arrange the points along face adjacencies for easier tessellation of the
 					   polygon. Store the ordered edge points in the polygon-vector. Create your own
 					   helper structures for edge-face adjacenies etc.*/
+		std::vector<cgv::vec3> points;
 
 		for (int e = 0; e < 12; e++) {
 			int a = edges[e][0];
 			int b = edges[e][1];
 			if (inside[a] != inside[b]) {                      
-				float t = dist[a] / (dist[a] - dist[b]);      
-				polygon.push_back(corners[a] + t * (corners[b] - corners[a])); 
+				float t = dist[a] / (dist[a] - dist[b]);  
+				// put into a temporary points vector
+				points.push_back(corners[a] + t * (corners[b] - corners[a])); 
 			}
 		}
 
+		// compute the centroid
+		cgv::vec3 center(0.0f);
+
+		for (const auto& p : points)
+			center += p;
+
+		center /= (float)points.size();
+
+		cgv::vec3 n = normalize(oblique_slice_normal);
+
+		cgv::vec3 ref =
+			fabs(n.x()) < 0.9f ?
+			cgv::vec3(1, 0, 0) :
+			cgv::vec3(0, 1, 0);
+
+		cgv::vec3 u = normalize(cross(ref, n));
+		cgv::vec3 v = cross(n, u);
+
+		std::sort(points.begin(), points.end(),
+			[&](const cgv::vec3& a, const cgv::vec3& b)
+			{
+				cgv::vec3 da = a - center;
+				cgv::vec3 db = b - center;
+
+				float angleA = atan2(dot(da, v), dot(da, u));
+				float angleB = atan2(dot(db, v), dot(db, u));
+
+				return angleA < angleB;
+			});
+
+		polygon = points;
 		/************************************************************************************/
 	}
 	/// draw orthogonal and oblique slices
@@ -373,7 +406,14 @@ public:
 					       Fill vector *P* with the vertex coordinates of each triangle. Due to the
 						   usage of glDrawArrays(GL_TRIANGLES...) each triangle consists of three vertices. */
 
-			 /*<your_code_here>*/
+			if (polygon.size()>=3) {
+				for (size_t i = 1; i + 1 < polygon.size(); ++i)
+				{
+					P.push_back(polygon[0]);      // common vertex
+					P.push_back(polygon[i]);      // current vertex
+					P.push_back(polygon[i + 1]);  // next vertex
+				}
+			 }
 
 			/************************************************************************************/
 		}
