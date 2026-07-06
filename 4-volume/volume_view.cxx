@@ -27,6 +27,7 @@ enum NewColorScale {
 
 	 /*<your_code_here>*/
 
+	OTHER_COLOR_SCALE
 	/************************************************************************************/
 };
 
@@ -91,6 +92,69 @@ protected:
 	unsigned transfer_function_texture_resolution;
 	///
 	bool transfer_function_changed;
+
+
+	// FOR EX 4.2a
+	/*
+	The following 2 methods (bellCurve and other_color_scale) work as follow:
+	Because we are working with data from a person's head, then I wanted to make the transfer function 
+	to highlight the elements that are mostly found inside the head
+	The bellCurve function is used to create a smoother transition with the color scale
+	The 1D bell curve function has its maximum at the value "center" with a falloff dependent of "rad"
+	for (center * 2/rad) the function outputs a value lower than 0.02
+	the smaller "rad" the steeper will be the falloff of the bell curve
+	This can be used to also paint of the same color but with lower hue, ranges that are besides the main search range
+	The "main" range will have the stronges hue
+	E.g.:
+	RED : represents the bones (given the range in Vorlesung: 1800...1900 + 1024 / 4096) 
+	this helps us to mainly visualize the skull structure (strong red color)
+	the center of the bell curve is set to 0.7 
+	(1800 + 1024) / 4096 = 0.69
+	(1900 + 1024) / 4096 = 0.71
+	with "rad"=0.25 the falloff of red is smoother but "leaks" to other ranges, meaning v_HU > 1900 and v_HU < 1800
+	However, they will have increasingly lower red hue as they are further away from the center of the bell curve
+	BLUE : represents the soft tissue to visualize the head structure 
+	(100+1024)/4096 = 0.27
+	(300+1024)/4096 = 0.32
+	so center set to 0.295
+	GREEN : does not map to any specific range shown in Vorlesung, I used it only to try to show the brain structure with more detail
+	*/
+
+
+	// FOR EX 4.2d
+	/*
+	texture resolution produces some artifacts if it is not a power of 2 
+	The main issue that it causes, is that colors are not correctly displayed
+	And some times they the displayed color changes depending on texture_resolution
+
+	The bigger texture_resolution the wider is the value range, so more color can be shown 
+	We can understand this as follow: 
+	for each value there is a bucket; e.g.: texture_resolution = 2, then there is a bucket for 0 and 1
+	so the simulation would only read and display the values 0 and 1
+	if we extend texture_resolution, then there are more buckets, which means that a wider range of discrete values will be read
+	
+	texture_resolution should be a power of 2 because we are working with a texture and the GPU is optimized to work with power of 2 textures???
+
+	*/
+	float bellCurve(float x, float center, float rad)
+	{
+		return exp(-pow((x - center) /rad, 2));
+	}
+
+	cgv::media::color<float, cgv::media::RGB> other_color_scale(float v) 
+	{
+		// bone range [0,1] : 0.69, 0.71
+		float red = bellCurve(v, 0.7f, 0.1f);
+		// soft tissue range [0,1] : 0.27, 0.32
+		float blue = bellCurve(v, 0.295f, 0.05f);
+
+		// tryin to show the brain
+		float green = bellCurve(v, 0.34f, 0.01f);
+
+		return cgv::media::color<float, cgv::media::RGB>(red, green, blue); 
+	}
+
+
 	/// overload with new implementation
 	void compute_transfer_function_texture(std::vector<cgv::rgba>& clr_samples)
 	{
@@ -111,8 +175,11 @@ protected:
 							   Note: you can reorganize this function, if it doesn't fit your needs or 
 							   add variable before the switch-statement. Just keep in mind that the clr_samples-vector 
 							   should be of the size transfer_function_texture_resolution. */
-
-				 /*<your_code_here>*/
+				case OTHER_COLOR_SCALE: {
+					reinterpret_cast<cgv::rgb&>(clr) = other_color_scale(v);
+					//std::cout << "current v : " << v << std::endl;
+					break;
+				}
 
 				/************************************************************************************/
 				case CS_TEMPERATURE: {
@@ -152,7 +219,7 @@ public:
 		show_box = true;
 		transfer_function_changed = true;
 		transfer_function_texture_resolution = 256;
-		color_scale = CS_TEMPERATURE;
+		color_scale = OTHER_COLOR_SCALE;
 		show_orthogonal_slices[0] = show_orthogonal_slices[1] = show_orthogonal_slices[2] = false;
 		show_oblique_slice = true;
 		show_volume = false;
@@ -639,7 +706,7 @@ public:
 			/************************************************************************************
 			 tasks 4.2b: Add the name of the new color scales in the enums-string */
 
-			 add_member_control(this, "color_scale", color_scale, "dropdown", "enums='temperature'");
+			 add_member_control(this, "color_scale", color_scale, "dropdown", "enums='temperature, other_color_scale'");
 
 			/************************************************************************************/
 
