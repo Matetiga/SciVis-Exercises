@@ -123,18 +123,15 @@ protected:
 
 	// FOR EX 4.2d
 	/*
-	texture resolution produces some artifacts if it is not a power of 2 
-	The main issue that it causes, is that colors are not correctly displayed
-	And some times they the displayed color changes depending on texture_resolution
+	texture_resolution should be a power of 2 because the GPU and CPU are optimized to work with power of 2 textures, 
+	so it is easer to compress and store them
 
-	The bigger texture_resolution the wider is the value range, so more color can be shown 
+	The bigger texture_resolution the wider is the value range, so more colors can be shown 
 	We can understand this as follow: 
 	for each value there is a bucket; e.g.: texture_resolution = 2, then there is a bucket for 0 and 1
-	so the simulation would only read and display the values 0 and 1
 	if we extend texture_resolution, then there are more buckets, which means that a wider range of discrete values will be read
+	Therefore, for larger texture_resolution, there are more details shown  (visible with Temperature color scale -> air turbulence is more visible)
 	
-	texture_resolution should be a power of 2 because we are working with a texture and the GPU is optimized to work with power of 2 textures???
-
 	*/
 	float bellCurve(float x, float center, float rad)
 	{
