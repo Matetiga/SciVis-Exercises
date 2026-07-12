@@ -27,6 +27,7 @@ enum NewColorScale {
 
 	 /*<your_code_here>*/
 
+	OTHER_COLOR_SCALE
 	/************************************************************************************/
 };
 
@@ -91,6 +92,66 @@ protected:
 	unsigned transfer_function_texture_resolution;
 	///
 	bool transfer_function_changed;
+
+
+	// FOR EX 4.2a
+	/*
+	The following 2 methods (bellCurve and other_color_scale) work as follow:
+	Because we are working with data from a person's head, then I wanted to make the transfer function 
+	to highlight the elements that are mostly found inside the head
+	The bellCurve function is used to create a smoother transition with the color scale
+	The 1D bell curve function has its maximum at the value "center" with a falloff dependent of "rad"
+	for (center * 2/rad) the function outputs a value lower than 0.02
+	the smaller "rad" the steeper will be the falloff of the bell curve
+	This can be used to also paint of the same color but with lower hue, ranges that are besides the main search range
+	The "main" range will have the stronges hue
+	E.g.:
+	RED : represents the bones (given the range in Vorlesung: 1800...1900 + 1024 / 4096) 
+	this helps us to mainly visualize the skull structure (strong red color)
+	the center of the bell curve is set to 0.7 
+	(1800 + 1024) / 4096 = 0.69
+	(1900 + 1024) / 4096 = 0.71
+	with "rad"=0.25 the falloff of red is smoother but "leaks" to other ranges, meaning v_HU > 1900 and v_HU < 1800
+	However, they will have increasingly lower red hue as they are further away from the center of the bell curve
+	BLUE : represents the soft tissue to visualize the head structure 
+	(100+1024)/4096 = 0.27
+	(300+1024)/4096 = 0.32
+	so center set to 0.295
+	GREEN : does not map to any specific range shown in Vorlesung, I used it only to try to show the brain structure with more detail
+	*/
+
+
+	// FOR EX 4.2d
+	/*
+	texture_resolution should be a power of 2 because the GPU and CPU are optimized to work with power of 2 textures, 
+	so it is easer to compress and store them
+
+	The bigger texture_resolution the wider is the value range, so more colors can be shown 
+	We can understand this as follow: 
+	for each value there is a bucket; e.g.: texture_resolution = 2, then there is a bucket for 0 and 1
+	if we extend texture_resolution, then there are more buckets, which means that a wider range of discrete values will be read
+	Therefore, for larger texture_resolution, there are more details shown  (visible with Temperature color scale -> air turbulence is more visible)
+	
+	*/
+	float bellCurve(float x, float center, float rad)
+	{
+		return exp(-pow((x - center) /rad, 2));
+	}
+
+	cgv::media::color<float, cgv::media::RGB> other_color_scale(float v) 
+	{
+		// bone range [0,1] : 0.69, 0.71
+		float red = bellCurve(v, 0.7f, 0.1f);
+		// soft tissue range [0,1] : 0.27, 0.32
+		float blue = bellCurve(v, 0.295f, 0.05f);
+
+		// tryin to show the brain
+		float green = bellCurve(v, 0.34f, 0.01f);
+
+		return cgv::media::color<float, cgv::media::RGB>(red, green, blue); 
+	}
+
+
 	/// overload with new implementation
 	void compute_transfer_function_texture(std::vector<cgv::rgba>& clr_samples)
 	{
@@ -111,8 +172,11 @@ protected:
 							   Note: you can reorganize this function, if it doesn't fit your needs or 
 							   add variable before the switch-statement. Just keep in mind that the clr_samples-vector 
 							   should be of the size transfer_function_texture_resolution. */
-
-				 /*<your_code_here>*/
+				case OTHER_COLOR_SCALE: {
+					reinterpret_cast<cgv::rgb&>(clr) = other_color_scale(v);
+					//std::cout << "current v : " << v << std::endl;
+					break;
+				}
 
 				/************************************************************************************/
 				case CS_TEMPERATURE: {
@@ -152,7 +216,7 @@ public:
 		show_box = true;
 		transfer_function_changed = true;
 		transfer_function_texture_resolution = 256;
-		color_scale = CS_TEMPERATURE;
+		color_scale = OTHER_COLOR_SCALE;
 		show_orthogonal_slices[0] = show_orthogonal_slices[1] = show_orthogonal_slices[2] = false;
 		show_oblique_slice = true;
 		show_volume = false;
@@ -283,8 +347,8 @@ public:
 		 tasks 4.1a: Compute the signed distance between the given point p and the slice which
 					   is defined through oblique_slice_normal and oblique_slice_distance. */
 
-		 /*<your_code_here>*/
-		 return 0;
+		return dot(oblique_slice_normal, p) - oblique_slice_distance;
+		
 
 		/************************************************************************************/
 	}
@@ -292,6 +356,17 @@ public:
 	/// the volume
 	void construct_oblique_slice(std::vector<cgv::vec3>& polygon)
 	{
+		const cgv::vec3 corners[8] = {
+		{0,0,0}, {1,0,0}, {0,1,0}, {1,1,0},
+		{0,0,1}, {1,0,1}, {0,1,1}, {1,1,1}
+		};
+
+		
+		const int edges[12][2] = {
+			{0,1}, {1,3}, {3,2}, {2,0},  
+			{4,5}, {5,7}, {7,6}, {6,4}, 
+			{0,4}, {1,5}, {3,7}, {2,6}   
+		};
 		/************************************************************************************
 		 tasks 4.1b: Classify the volume box corners (vertices) as inside or outside vertices.
 					   The volume box is a unit cube.
@@ -299,7 +374,12 @@ public:
 					   distance between each box corner and the slice. Assume that outside vertices
 					   have a positive distance.*/
 
-		 /*<your_code_here>*/
+		float dist[8];
+		bool  inside[8];
+		for (int i = 0; i < 8; i++) {
+			dist[i] = signed_distance_from_oblique_slice(corners[i]);
+			inside[i] = (dist[i] >= 0.0f);
+		}
 
 		/************************************************************************************/
 
@@ -308,12 +388,54 @@ public:
 					   corners. Remember that the edge point coordinates are in range [0,1] for
 					   all dimensions since they are 3D-texture coordinates. These points are
 					   stored in the polygon-vector.
+
+
 		 tasks 4.1d: Arrange the points along face adjacencies for easier tessellation of the
 					   polygon. Store the ordered edge points in the polygon-vector. Create your own
 					   helper structures for edge-face adjacenies etc.*/
+		std::vector<cgv::vec3> points;
 
-		 /*<your_code_here>*/
+		for (int e = 0; e < 12; e++) {
+			int a = edges[e][0];
+			int b = edges[e][1];
+			if (inside[a] != inside[b]) {                      
+				float t = dist[a] / (dist[a] - dist[b]);  
+				// put into a temporary points vector
+				points.push_back(corners[a] + t * (corners[b] - corners[a])); 
+			}
+		}
 
+		// compute the centroid
+		cgv::vec3 center(0.0f);
+
+		for (const auto& p : points)
+			center += p;
+
+		center /= (float)points.size();
+
+		cgv::vec3 n = normalize(oblique_slice_normal);
+
+		cgv::vec3 ref =
+			fabs(n.x()) < 0.9f ?
+			cgv::vec3(1, 0, 0) :
+			cgv::vec3(0, 1, 0);
+
+		cgv::vec3 u = normalize(cross(ref, n));
+		cgv::vec3 v = cross(n, u);
+
+		std::sort(points.begin(), points.end(),
+			[&](const cgv::vec3& a, const cgv::vec3& b)
+			{
+				cgv::vec3 da = a - center;
+				cgv::vec3 db = b - center;
+
+				float angleA = atan2(dot(da, v), dot(da, u));
+				float angleB = atan2(dot(db, v), dot(db, u));
+
+				return angleA < angleB;
+			});
+
+		polygon = points;
 		/************************************************************************************/
 	}
 	/// draw orthogonal and oblique slices
@@ -348,7 +470,14 @@ public:
 					       Fill vector *P* with the vertex coordinates of each triangle. Due to the
 						   usage of glDrawArrays(GL_TRIANGLES...) each triangle consists of three vertices. */
 
-			 /*<your_code_here>*/
+			if (polygon.size()>=3) {
+				for (size_t i = 1; i + 1 < polygon.size(); ++i)
+				{
+					P.push_back(polygon[0]);      // common vertex
+					P.push_back(polygon[i]);      // current vertex
+					P.push_back(polygon[i + 1]);  // next vertex
+				}
+			 }
 
 			/************************************************************************************/
 		}
@@ -574,7 +703,7 @@ public:
 			/************************************************************************************
 			 tasks 4.2b: Add the name of the new color scales in the enums-string */
 
-			 add_member_control(this, "color_scale", color_scale, "dropdown", "enums='temperature'");
+			 add_member_control(this, "color_scale", color_scale, "dropdown", "enums='temperature, other_color_scale'");
 
 			/************************************************************************************/
 
